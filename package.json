@@ -1,0 +1,13 @@
+{
+  "name": "quantix",
+  "version": "0.0.1",
+  "description": "A suite of Python packages for algorithmic trading, offering tools for data analysis, strategy development, back-testing and live trading.",
+  "license": "MIT",
+  "scripts": {},
+  "private": true,
+  "dependencies": {},
+  "devDependencies": {
+    "@nx/js": "19.8.1",
+    "nx": "19.8.1"
+  }
+}

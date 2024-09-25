@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "nrwl.angular-console",
+    "ms-python.isort",
+    "ms-python.black-formatter",
+    "ms-python.mypy-type-checker",
+    "ms-python.python",
+    "ms-python.debugpy",
+    "gruntfuggly.todo-tree"
+  ]
+}

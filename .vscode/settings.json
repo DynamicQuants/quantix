@@ -1,0 +1,75 @@
+{
+  /**
+   * Python settings.
+   */
+  "python.analysis.extraPaths": [
+    "./packages/brokers"
+  ],
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  },
+  "python.terminal.activateEnvironment": true,
+  "python.languageServer": "Pylance",
+  "python.analysis.typeCheckingMode": "strict",
+  "black-formatter.args": ["--line-length", "100"],
+  "isort.args": [
+    "--profile",
+    "black",
+    "--line-length",
+    "100",
+    "--src-path",
+    "./packages/brokers",
+  ],
+  /**
+   * Pytest settings.
+   */
+  "python.testing.pytestArgs": [
+    "./packages/brokers",
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestPath": "./.venv/bin/pytest",
+  "python.defaultInterpreterPath": "./.venv/bin/python",
+  /**
+   * Typescript settings.
+   */
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "always" // TSX auto format on save ESLint
+    },
+    "editor.tabSize": 2
+  },
+  /**
+   * General settings.
+   */
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/.venv": true,
+    "**/reports": true,
+    "**/coverage": true,
+    "**/.mypy_cache": true,
+    "**/.coverage": true,
+    "**/.next": true,
+    "**/dist": true
+  },
+  /**
+   * Json settings.
+   */
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features",
+    "editor.quickSuggestions": {
+      "strings": true
+    },
+    "editor.suggest.insertMode": "replace"
+  },
+  "cSpell.words": [
+    "Quantix"
+  ]
+}
