@@ -3,7 +3,7 @@
    * Python settings.
    */
   "python.analysis.extraPaths": [
-    "./packages/brokers"
+    "./packages/core"
   ],
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter",
@@ -22,13 +22,13 @@
     "--line-length",
     "100",
     "--src-path",
-    "./packages/brokers",
+    "./packages/core",
   ],
   /**
    * Pytest settings.
    */
   "python.testing.pytestArgs": [
-    "./packages/brokers",
+    "./packages/core",
   ],
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true,
