@@ -10,7 +10,9 @@ license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<=3.12"
+python = ">=3.9,<3.12"
+patito = "^0.7.0"
+polars = "^1.8.2"
 
 [tool.poetry.dependencies.core]
 path = "packages/core"

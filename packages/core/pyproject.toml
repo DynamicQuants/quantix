@@ -16,13 +16,12 @@ description = "Provides all abstractions and utilities for algorithm trading."
 authors = ["Dynamic Quants"]
 license = "MIT"
 readme = "README.md"
-group = {}
 
 [[tool.poetry.packages]]
 include = "core"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<=3.12"
+python = ">=3.9,<3.12"
 
 [build-system]
 requires = ["poetry-core"]
