@@ -6,9 +6,8 @@
 """Defines the interface for fetching market data from a broker."""
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from datetime import date, datetime
-
-from pydantic.dataclasses import dataclass
 
 from core.models.asset import AssetDataFrame
 from core.models.bar import BarDataFrame
