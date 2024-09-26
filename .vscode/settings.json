@@ -28,6 +28,7 @@
     // For packages with missing type stubs we don't want to see errors.
     "reportMissingTypeStubs": "none"
   },
+  "mypy-type-checker.args": ["--ignore-missing-imports"],
   /**
    * Pytest settings.
    */
@@ -75,7 +76,12 @@
   },
   "cSpell.words": [
     "Forex",
+    "OHLCV",
     "patito",
-    "Quantix"
+    "pydantic",
+    "pytz",
+    "Quantix",
+    "timeframes",
+    "vwap"
   ]
 }
