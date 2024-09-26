@@ -1,0 +1,28 @@
+[tool.coverage.run]
+branch = true
+source = ["brokers"]
+
+[tool.coverage.report]
+exclude_lines = ['if TYPE_CHECKING:']
+show_missing = true
+
+[tool.pytest.ini_options]
+addopts = "--cov --cov-fail-under=100 --cov-report html:'../../coverage/packages/brokers/html' --cov-report xml:'../../coverage/packages/brokers/coverage.xml' --html='../../reports/packages/brokers/unittests/html/index.html' --junitxml='../../reports/packages/brokers/unittests/junit.xml'"
+
+[tool.poetry]
+name = "brokers"
+version = "1.0.0"
+description = "Provides all core implementations using brokers APIs."
+authors = ["Dynamic Quants"]
+license = 'MIT'
+readme = 'README.md'
+
+[[tool.poetry.packages]]
+include = "brokers"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.12"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

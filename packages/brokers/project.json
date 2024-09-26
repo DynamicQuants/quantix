@@ -1,0 +1,84 @@
+{
+  "name": "brokers",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "packages/brokers/brokers",
+  "targets": {
+    "lock": {
+      "executor": "@nxlv/python:run-commands",
+      "options": {
+        "command": "poetry lock --no-update",
+        "cwd": "packages/brokers"
+      }
+    },
+    "add": {
+      "executor": "@nxlv/python:add",
+      "options": {}
+    },
+    "update": {
+      "executor": "@nxlv/python:update",
+      "options": {}
+    },
+    "remove": {
+      "executor": "@nxlv/python:remove",
+      "options": {}
+    },
+    "build": {
+      "executor": "@nxlv/python:build",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
+      "options": {
+        "outputPath": "packages/brokers/dist",
+        "publish": true,
+        "lockedVersions": true,
+        "bundleLocalDependencies": true
+      }
+    },
+    "install": {
+      "executor": "@nxlv/python:install",
+      "options": {
+        "silent": false,
+        "args": "",
+        "cacheDir": ".cache/pypoetry",
+        "verbose": false,
+        "debug": false
+      }
+    },
+    "lint": {
+      "executor": "@nxlv/python:flake8",
+      "outputs": [
+        "{workspaceRoot}/reports/packages/brokers/pylint.txt"
+      ],
+      "options": {
+        "outputFile": "reports/packages/brokers/pylint.txt"
+      }
+    },
+    "test": {
+      "executor": "@nxlv/python:run-commands",
+      "outputs": [
+        "{workspaceRoot}/reports/packages/brokers/unittests",
+        "{workspaceRoot}/coverage/packages/brokers"
+      ],
+      "options": {
+        "command": "poetry run pytest tests/",
+        "cwd": "packages/brokers",
+        "envFile": "{workspaceRoot}/.env.test"
+      }
+    },
+    "nx-release-publish": {
+      "executor": "@nxlv/python:publish",
+      "options": {},
+      "outputs": []
+    }
+  },
+  "tags": [
+    "type:package",
+    "scope:infrastructure"
+  ],
+  "release": {
+    "version": {
+      "generator": "@nxlv/python:release-version"
+    }
+  }
+}

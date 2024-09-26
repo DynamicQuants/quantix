@@ -8,17 +8,25 @@ description = "A suite of Python packages for algorithmic trading, offering tool
 authors = ["Dynamic Quants"]
 license = "MIT"
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"
 patito = "^0.7.0"
-polars = {extras = ["pyarrow"], version = "^1.8.2"}
 pydantic = "^2.9.2"
 pytz = "^2024.2"
 duckdb = "^1.1.1"
 
+[tool.poetry.dependencies.polars]
+extras = ["pyarrow"]
+version = "^1.8.2"
+
 [tool.poetry.dependencies.core]
 path = "packages/core"
+develop = true
+
+[tool.poetry.dependencies.brokers]
+path = "packages/brokers"
 develop = true
 
 [tool.poetry.group.dev.dependencies]

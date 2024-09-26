@@ -27,6 +27,19 @@ pycodestyle = ">=2.10.0"
 tomli = {version = "*", markers = "python_version < \"3.11\""}
 
 [[package]]
+name = "brokers"
+version = "1.0.0"
+description = "Provides all core implementations using brokers APIs."
+optional = false
+python-versions = ">=3.9,<3.12"
+files = []
+develop = true
+
+[package.source]
+type = "directory"
+url = "packages/brokers"
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 description = "Cross-platform colored terminal text."
@@ -811,4 +824,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.12"
-content-hash = "30f69ed91aec8def2c1d65cc589b9ea7f3cb5690335cbe8632dabad801fd5bbe"
+content-hash = "41dec34a2984bd42d576b13ac0ebbf820577d05ac106c91fb5186960e3a8b5cc"
