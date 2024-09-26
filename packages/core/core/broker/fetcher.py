@@ -6,8 +6,9 @@
 """Defines the interface for fetching market data from a broker."""
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from datetime import date, datetime
+
+from pydantic.dataclasses import dataclass
 
 from core.models.asset import AssetDataFrame
 from core.models.bar import BarDataFrame
@@ -73,7 +74,7 @@ class FetchBarsParams:
             raise ValueError("End date must be later than start date.")
 
 
-class MarketData(ABC):
+class Fetcher(ABC):
     """
     Abstract class that defines the interface for fetching market data from a broker. This class
     should be implemented by concrete classes that provide the implementation for fetching market
@@ -85,7 +86,7 @@ class MarketData(ABC):
         self.has_calendar = has_calendar
 
     def __str__(self):
-        return f"MarketData<{self.broker.value}>"
+        return f"Fetcher<{self.broker.value}>"
 
     @abstractmethod
     def fetch_calendar(self, params: FetchCalendarParams | None = None) -> CalendarDataFrame:
@@ -100,7 +101,7 @@ class MarketData(ABC):
     @abstractmethod
     def fetch_assets(self) -> AssetDataFrame:
         """
-        Returns a list of assets available for the specified broker.
+        Fetches the list of assets available for trading by the broker.
 
         This method should return a DataFrame containing the list of assets available for trading
         by the broker. The DataFrame must be validated using the Asset model.
