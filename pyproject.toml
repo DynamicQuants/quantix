@@ -13,6 +13,8 @@ readme = "README.md"
 python = ">=3.9,<3.12"
 patito = "^0.7.0"
 polars = "^1.8.2"
+pydantic = "^2.9.2"
+pytz = "^2024.2"
 
 [tool.poetry.dependencies.core]
 path = "packages/core"
@@ -26,6 +28,9 @@ pytest-sugar = "0.9.7"
 pytest-cov = "4.1.0"
 pytest-html = "3.2.0"
 mypy = "^1.11.2"
+
+[tool.poetry.group.types.dependencies]
+types-pytz = "^2024.2.0.20240913"
 
 [build-system]
 requires = ["poetry-core==1.1.0"]
