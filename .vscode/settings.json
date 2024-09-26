@@ -14,7 +14,7 @@
   },
   "python.terminal.activateEnvironment": true,
   "python.languageServer": "Pylance",
-  "python.analysis.typeCheckingMode": "strict",
+  "python.analysis.typeCheckingMode": "standard",
   "black-formatter.args": ["--line-length", "100"],
   "isort.args": [
     "--profile",
@@ -24,6 +24,10 @@
     "--src-path",
     "./packages/core",
   ],
+  "python.analysis.diagnosticSeverityOverrides": {
+    // For packages with missing type stubs we don't want to see errors.
+    "reportMissingTypeStubs": "none"
+  },
   /**
    * Pytest settings.
    */
@@ -70,6 +74,8 @@
     "editor.suggest.insertMode": "replace"
   },
   "cSpell.words": [
+    "Forex",
+    "patito",
     "Quantix"
   ]
 }
