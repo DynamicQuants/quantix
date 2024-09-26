@@ -12,9 +12,10 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"
 patito = "^0.7.0"
-polars = "^1.8.2"
+polars = {extras = ["pyarrow"], version = "^1.8.2"}
 pydantic = "^2.9.2"
 pytz = "^2024.2"
+duckdb = "^1.1.1"
 
 [tool.poetry.dependencies.core]
 path = "packages/core"
