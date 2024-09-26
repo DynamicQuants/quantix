@@ -7,7 +7,7 @@ exclude_lines = ['if TYPE_CHECKING:']
 show_missing = true
 
 [tool.pytest.ini_options]
-addopts = "--cov --cov-fail-under=100 --cov-report html:'../../coverage/packages/brokers/html' --cov-report xml:'../../coverage/packages/brokers/coverage.xml' --html='../../reports/packages/brokers/unittests/html/index.html' --junitxml='../../reports/packages/brokers/unittests/junit.xml'"
+addopts = "--cov --cov-fail-under=100 --cov-report term --cov-report html:'../../coverage/packages/brokers/html' --cov-report xml:'../../coverage/packages/brokers/coverage.xml' --html='../../reports/packages/brokers/unittests/html/index.html' --junitxml='../../reports/packages/brokers/unittests/junit.xml'"
 
 [tool.poetry]
 name = "brokers"
