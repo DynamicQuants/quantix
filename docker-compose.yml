@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: some-timescaledb
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=${TIMESCALEDB_PASSWORD}
+      - TIMESCALEDB_TELEMETRY=off
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  timescaledb_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${TIMESCALE_VOLUME_PATH}

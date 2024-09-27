@@ -2,10 +2,7 @@
   /**
    * Python settings.
    */
-  "python.analysis.extraPaths": [
-    "./packages/core",
-    "./packages/brokers"
-  ],
+  "python.analysis.extraPaths": ["./packages/core", "./packages/brokers"],
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter",
     "editor.formatOnSave": true,
@@ -25,7 +22,7 @@
     "--src-path",
     "./packages/core",
     "--src-path",
-    "./packages/brokers",
+    "./packages/brokers"
   ],
   "python.analysis.diagnosticSeverityOverrides": {
     // For packages with missing type stubs we don't want to see errors.
@@ -35,10 +32,7 @@
   /**
    * Pytest settings.
    */
-  "python.testing.pytestArgs": [
-    "./packages/core",
-    "./packages/brokers",
-  ],
+  "python.testing.pytestArgs": ["./packages/core", "./packages/brokers"],
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true,
   "python.testing.pytestPath": "./.venv/bin/pytest",
@@ -89,8 +83,5 @@
     "timeframes",
     "vwap"
   ],
-  "cSpell.enableFiletypes": [
-    "!json",
-    "!toml"
-  ],
+  "cSpell.enableFiletypes": ["!json", "!toml"]
 }

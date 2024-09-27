@@ -6,6 +6,7 @@
     "ms-python.mypy-type-checker",
     "ms-python.python",
     "ms-python.debugpy",
-    "gruntfuggly.todo-tree"
+    "gruntfuggly.todo-tree",
+    "ms-azuretools.vscode-docker"
   ]
 }
