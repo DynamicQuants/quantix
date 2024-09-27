@@ -27,6 +27,8 @@ class AssetClass(str, Enum):
     EQUITY = "Equity"
     CRYPTO = "Crypto"
     FOREX = "Forex"
+    OPTION = "Option"
+    FUTURE = "Future"
 
 
 class AssetStatus(str, Enum):
