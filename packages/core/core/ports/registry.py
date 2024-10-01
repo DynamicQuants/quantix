@@ -3,7 +3,10 @@
 # This source code is part of Quantix library and is licensed under the MIT
 # license found in the LICENSE file in the root directory of this source tree.
 
-"""Defines the interface for the registry used to keep track of the data fetching process."""
+"""
+Defines the interface for the registry used to keep track of the actions performed in the
+core system.
+"""
 
 from abc import ABC, abstractmethod
 from datetime import datetime

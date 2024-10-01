@@ -1,1 +1,1 @@
-"""Provides the core entities."""
+"""Provides data models that represent all core entities."""
