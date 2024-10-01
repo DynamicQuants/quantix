@@ -80,6 +80,7 @@
     "pydantic",
     "pytz",
     "Quantix",
+    "sqlalchemy",
     "timeframes",
     "vwap"
   ],

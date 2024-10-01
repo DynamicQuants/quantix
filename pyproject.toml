@@ -18,6 +18,8 @@ pytz = "^2024.2"
 duckdb = "^1.1.1"
 alpaca-py = "^0.30.1"
 python-dotenv = "^1.0.1"
+sqlalchemy = "^2.0.35"
+psycopg2-binary = "^2.9.9"
 
 [tool.poetry.dependencies.polars]
 extras = ["pyarrow"]
