@@ -18,11 +18,11 @@ from alpaca.trading.models import Asset as AlpacaAsset
 from alpaca.trading.models import Calendar as AlpacaCalendar
 from alpaca.trading.requests import GetAssetsRequest, GetCalendarRequest
 
-from core.broker.fetcher import FetchBarsParams, FetchCalendarParams, Fetcher
 from core.models.asset import Asset, AssetClass, AssetDataFrame, AssetStatus
 from core.models.bar import Bar, BarDataFrame
 from core.models.broker import Broker
 from core.models.calendar import Calendar, CalendarDataFrame
+from core.ports.fetcher import FetchBarsParams, FetchCalendarParams, Fetcher
 
 from .alpaca_client import AlpacaDataClient
 
@@ -70,9 +70,7 @@ class AlpacaFetcher(AlpacaDataClient, Fetcher):
             .set_model(Asset)
             .with_columns(
                 [
-                    pl.concat_str([pl.col("name"), pl.col("symbol")], separator=" - ").alias(
-                        "name"
-                    ),
+                    pl.concat_str([pl.col("name"), pl.col("symbol")], separator="-").alias("name"),
                     pl.lit(Broker.ALPACA).alias("broker"),
                     pl.col("status").replace_strict(status_map).alias("status"),
                     pl.col("asset_class").replace_strict(asset_class_map).alias("asset_class"),

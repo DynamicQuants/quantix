@@ -2,9 +2,9 @@ from datetime import date, datetime
 
 import pytest
 
-from brokers.alpaca.alpaca_fetcher import AlpacaFetcher
-from core.broker.fetcher import FetchBarsParams, FetchCalendarParams
+from brokers.adapters.alpaca_fetcher import AlpacaFetcher
 from core.models.timeframe import TFPreset
+from core.ports.fetcher import FetchBarsParams, FetchCalendarParams
 
 
 class TestAlpacaFetcher:
