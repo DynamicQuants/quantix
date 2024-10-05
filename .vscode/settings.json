@@ -73,15 +73,19 @@
     "editor.suggest.insertMode": "replace"
   },
   "cSpell.words": [
+    "Dataframe",
     "dotenv",
     "Forex",
+    "hypertable",
     "OHLCV",
     "patito",
+    "psycopg",
     "pydantic",
     "pytz",
     "Quantix",
     "sqlalchemy",
     "timeframes",
+    "TIMESCALEDB",
     "vwap"
   ],
   "cSpell.enableFiletypes": ["!json", "!toml"]
