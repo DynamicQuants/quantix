@@ -1,0 +1,21 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "Dataframe",
+    "dotenv",
+    "Forex",
+    "hypertable",
+    "OHLCV",
+    "patito",
+    "psycopg",
+    "pydantic",
+    "pytz",
+    "Quantix",
+    "sqlalchemy",
+    "timeframes",
+    "TIMESCALEDB",
+    "vwap"
+  ],
+  "enableFiletypes": ["!json", "!toml"]
+}
