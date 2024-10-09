@@ -4,8 +4,10 @@
   "words": [
     "Dataframe",
     "dotenv",
+    "executemany",
     "Forex",
     "hypertable",
+    "hypertables",
     "OHLCV",
     "patito",
     "psycopg",
@@ -15,7 +17,11 @@
     "sqlalchemy",
     "timeframes",
     "TIMESCALEDB",
+    "TIMESTAMPTZ",
     "vwap"
   ],
-  "enableFiletypes": ["!json", "!toml"]
+  "enableFiletypes": [
+    "!json",
+    "!toml"
+  ]
 }
