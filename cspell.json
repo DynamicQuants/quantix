@@ -11,6 +11,7 @@
     "hypertables",
     "OHLCV",
     "patito",
+    "plpgsql",
     "psycopg",
     "pydantic",
     "pytz",
