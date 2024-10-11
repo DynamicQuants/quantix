@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Generic, Literal, TypeVar
 
-import patito as pt
+import polars as pl
 
 
 @dataclass
@@ -41,13 +41,22 @@ class Repository(ABC, Generic[SaveOptions, LoadOptions, UpsertOptions]):
     Repository interface that defines the methods to save, load, and upsert data. A repository
     is a data access layer that abstracts the underlying storage mechanism. It can be a database,
     a file, or any other data source that can store and retrieve data.
+
+    It is important to note that the repository interface is generic and can be implemented by
+    different storage mechanisms. For example, a repository can be implemented to save data to a
+    file, a database, or a cloud storage service. The implementation details are hidden from the
+    client code, which only interacts with the repository interface.
+
+    The repository should not validate the data or perform any business logic. It should only
+    handle the storage and retrieval of data. The validation and business logic should be handled
+    by the client code before calling the repository methods.
     """
 
     @abstractmethod
     def save(self, options: SaveOptions) -> SaveResult: ...
 
     @abstractmethod
-    def load(self, options: LoadOptions) -> pt.DataFrame: ...
+    def load(self, options: LoadOptions) -> pl.DataFrame: ...
 
     @abstractmethod
     def upsert(self, options: UpsertOptions) -> UpsertResult: ...
