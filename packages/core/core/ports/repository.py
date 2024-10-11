@@ -7,7 +7,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Generic, Literal, Type, TypeVar
+from typing import Generic, Literal, TypeVar
 
 import patito as pt
 
@@ -33,12 +33,10 @@ class UpsertResult:
 
 SaveOptions = TypeVar("SaveOptions")
 LoadOptions = TypeVar("LoadOptions")
-UpdateOptions = TypeVar("UpdateOptions")
-M = TypeVar("M", bound=pt.Model)
-DF = TypeVar("DF", bound=pt.DataFrame)
+UpsertOptions = TypeVar("UpsertOptions")
 
 
-class Repository(ABC, Generic[SaveOptions, LoadOptions, UpdateOptions]):
+class Repository(ABC, Generic[SaveOptions, LoadOptions, UpsertOptions]):
     """
     Repository interface that defines the methods to save, load, and upsert data. A repository
     is a data access layer that abstracts the underlying storage mechanism. It can be a database,
@@ -49,7 +47,7 @@ class Repository(ABC, Generic[SaveOptions, LoadOptions, UpdateOptions]):
     def save(self, options: SaveOptions) -> SaveResult: ...
 
     @abstractmethod
-    def load(self, model: Type[M], df: DF, options: LoadOptions) -> DF: ...
+    def load(self, options: LoadOptions) -> pt.DataFrame: ...
 
     @abstractmethod
-    def upsert(self, options: UpdateOptions) -> UpsertResult: ...
+    def upsert(self, options: UpsertOptions) -> UpsertResult: ...

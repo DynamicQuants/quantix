@@ -5,7 +5,7 @@
 
 """Defines the data of a bar that represents the price movement of an asset."""
 
-from typing import final
+from typing import Optional, final
 
 import patito as pt
 from pydantic import AwareDatetime
@@ -40,7 +40,7 @@ class Bar(pt.Model):
     volume: float = pt.Field(gt=0)
     """The volume of the bar."""
 
-    vwap: float | None = None
+    vwap: Optional[float] = None
     """The volume-weighted average price of the bar."""
 
 
