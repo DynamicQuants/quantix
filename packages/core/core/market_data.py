@@ -5,16 +5,50 @@
 
 """MarketData class that is responsible for fetching, storing, and retrieving market data."""
 
-from typing import final
+from dataclasses import dataclass
+from datetime import date
+from typing import Literal, Optional
 
-from core.ports.fetcher import Fetcher
-from core.ports.registry import Registry
-from core.ports.repository import Repository
+import polars as pl
+
+from .ports.fetcher import FetchCalendarParams, Fetcher
+from .ports.repository import Repository
 
 
-@final
+@dataclass
+class GetCalendarOptions:
+    """Represents the optional filtering to get a calendar of trading days."""
+
+    start: date | None = None
+    end: date | None = None
+
+
+class MarketDataError(Exception):
+    """Market data error."""
+
+    def __init__(self, message: str, code: Literal["SAVE_CALENDAR_FAILED"]) -> None:
+        super().__init__(message)
+        self.code = code
+
+
 class MarketData:
-    def __init__(self, fetcher: Fetcher, repository: Repository, registry: Registry):
+    """
+    MarketData class that is responsible for fetching, storing, and retrieving market data. It
+    handles the communication between the fetcher and the repository in a optimized way. All
+    operations are saved in a registry for logging purposes.
+    """
+
+    def __init__(self, fetcher: Fetcher, repository: Repository) -> None:
         self._fetcher = fetcher
         self._repository = repository
-        self._registry = registry
+
+    def get_calendar(self, options: Optional[GetCalendarOptions] = None) -> pl.DataFrame:
+        """Get the calendar of trading days for a given broker."""
+        params = FetchCalendarParams(start=options.start, end=options.end) if options else None
+        calendar = self._fetcher.fetch_calendar(params)
+        result = self._repository.upsert("calendar", calendar)
+
+        if result.status == "error":
+            raise MarketDataError(message="Failed to upsert calendar", code="SAVE_CALENDAR_FAILED")
+
+        return calendar
