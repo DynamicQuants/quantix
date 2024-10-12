@@ -2,21 +2,15 @@ from datetime import datetime
 
 import pytest
 
-from brokers.adapters.timescale_repository import (
-    SQLFilter,
-    SQLWhere,
-    TimescaleLoadOptions,
-    TimescaleRepository,
-    TimescaleSaveOptions,
-    TimescaleTable,
-)
+from brokers.adapters.timescale_repository import TimescaleRepository, TimescaleRepositoryPayload
 from core.models.bar import Bar, BarDataFrame
+from core.ports.repository import LoadOptions
 
-BARS_TABLE = TimescaleTable(
+BARS_TABLE = TimescaleRepositoryPayload(
     model=Bar,
     db="test",
     schema="public",
-    name=f"test_bars_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+    table_name=f"test_bars_{datetime.now().strftime('%Y%m%d%H%M%S')}",
     unique_fields=["symbol, timestamp"],
     hypertable_key="timestamp",
 )
@@ -25,7 +19,7 @@ BARS_TABLE = TimescaleTable(
 class TestTimescaleRepository:
     @pytest.fixture
     def repository(self):
-        return TimescaleRepository()
+        return TimescaleRepository(payloads={"bars": BARS_TABLE})
 
     @pytest.fixture
     def bars(self):
@@ -50,32 +44,25 @@ class TestTimescaleRepository:
         )
 
     def test_save(self, repository: TimescaleRepository, bars: BarDataFrame):
-        options = TimescaleSaveOptions(table=BARS_TABLE, df=bars)
-        result = repository.save(options)
+        result = repository.save("bars", bars)
         assert result.status == "success"
 
     def test_upsert(self, repository: TimescaleRepository, bars: BarDataFrame):
-        options = TimescaleSaveOptions(table=BARS_TABLE, df=bars.limit(1))
-        result = repository.upsert(options)
+        result = repository.upsert("bars", bars.limit(1))
         assert result.status == "success"
         assert result.rows_inserted == 0
         assert result.rows_updated == 1
 
     def test_load(self, repository: TimescaleRepository):
-        options = TimescaleLoadOptions(table=BARS_TABLE)
-        df = repository.load(options)
+        df = repository.load("bars")
         assert df.shape[0] == 2
 
     def test_load_with_filters(self, repository: TimescaleRepository):
-        options = TimescaleLoadOptions(
-            table=BARS_TABLE,
-            filters=SQLFilter(where=[SQLWhere("symbol", "=", "AAPL")]),
-        )
-
-        df = repository.load(options)
+        options = LoadOptions(filters=[{"field": "symbol", "operator": "=", "value": "AAPL"}])
+        df = repository.load("bars", options)
         assert df.shape[0] == 1
 
     def test_load_with_limit(self, repository: TimescaleRepository):
-        options = TimescaleLoadOptions(table=BARS_TABLE, filters=SQLFilter(limit=1))
-        df = repository.load(options)
+        options = LoadOptions(limit=1)
+        df = repository.load("bars", options)
         assert df.shape[0] == 1

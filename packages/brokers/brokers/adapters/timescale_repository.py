@@ -7,7 +7,7 @@
 
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Any, Literal, Union, final, get_args, get_origin
+from typing import Any, Optional, Union, final, get_args, get_origin
 
 import patito as pt
 import polars as pl
@@ -15,66 +15,26 @@ import pytz
 from psycopg2.extensions import cursor as Psycopg2Cursor
 from pydantic import AwareDatetime
 
-from core.ports.repository import Repository, SaveResult, UpsertResult
+from core.ports.repository import LoadOptions, Repository, SaveResult, UpsertResult
 
 from .timescale_client import TimescaleClient
 
 
 @dataclass
-class SQLWhere:
-    """Defines a where clause for SQL queries."""
+class TimescaleRepositoryPayload:
+    """Defines the payload shape for Timescale repository."""
 
-    column: str
-    operator: Literal["=", ">", "<", ">=", "<=", "LIKE"]
-    value: Union[str, int, float, bool, date, datetime]
-
-
-@dataclass
-class SQLFilter:
-    """Defines a filter for SQL queries."""
-
-    where: list[SQLWhere] | None = None
-    limit: int | None = None
-
-
-@dataclass
-class TimescaleTable:
-    """Defines a Timescale table."""
-
-    model: type[pt.Model]  # Used only for table creation.
+    model: type[pt.Model]
     db: str
     schema: str
-    name: str
+    table_name: str
     hypertable_key: str | None = None
-    primary_keys: list[str] | None = None
+    primary_key: str | None = None
     unique_fields: list[str] | None = None
 
 
-@dataclass
-class TimescaleSaveOptions:
-    """Defines timescale options for saving data to an Timescale table."""
-
-    table: TimescaleTable
-    df: pl.DataFrame
-
-
-@dataclass
-class TimescaleLoadOptions:
-    """Defines timescale options for loading data from an Timescale table."""
-
-    table: TimescaleTable
-    filters: SQLFilter | None = None
-
-
 @final
-class TimescaleRepository(
-    TimescaleClient,
-    Repository[
-        TimescaleSaveOptions,
-        TimescaleLoadOptions,
-        TimescaleSaveOptions,
-    ],
-):
+class TimescaleRepository(TimescaleClient, Repository):
     """
     Repository implementation that saves and retrieves data from a Timescale database. It uses
     hyper-tables to store the data in a time-series format and normal tables for relational data.
@@ -83,18 +43,36 @@ class TimescaleRepository(
         https://docs.timescale.com/quick-start/latest/python/
     """
 
-    def _get_cursor(self, table: TimescaleTable) -> Psycopg2Cursor:
+    def __init__(self, payloads: dict[str, TimescaleRepositoryPayload]) -> None:
+        TimescaleClient.__init__(self)
+        Repository.__init__(self, payloads)
+
+    def _get_cursor(self, payload: TimescaleRepositoryPayload) -> Psycopg2Cursor:
         """
-        Get a cursor for the given table. If table does not exist, create it using the table
+        Get a cursor for the given payload. If table_name does not exist, create it using the table
         model definition.
         """
         cursor = self.connect().cursor()
-        self._create_table(table, cursor)
+
+        if not self._table_exists(payload, cursor):
+            self._create_table(payload, cursor)
+
+            # Create the trigger for updating the updated_at field on update.
+            self._create_updated_at_trigger(payload.table_name, cursor)
+
+        if payload.hypertable_key and not self._hypertable_exists(payload, cursor):
+            self._create_hypertable(payload, cursor)
+
         return cursor
 
-    def _hypertable_exists(self, table: TimescaleTable, cursor: Psycopg2Cursor):
+    def _close_cursor(self, cursor: Psycopg2Cursor) -> None:
+        """Commit the transaction and close the cursor."""
+        cursor.connection.commit()
+        cursor.close()
+
+    def _hypertable_exists(self, table: TimescaleRepositoryPayload, cursor: Psycopg2Cursor):
         """Check if the table is a hypertable."""
-        name = table.name
+        name = table.table_name
         query = (
             f"SELECT * FROM timescaledb_information.hypertables where hypertable_name = '{name}';"
         )
@@ -102,14 +80,14 @@ class TimescaleRepository(
         result = cursor.fetchall()
         return len(result) > 0
 
-    def _table_exists(self, table: TimescaleTable, cursor: Psycopg2Cursor) -> bool:
+    def _table_exists(self, table: TimescaleRepositoryPayload, cursor: Psycopg2Cursor) -> bool:
         """Check if a table exists in the current PostgreSQL database."""
 
         query = f"""
             SELECT EXISTS (
                 SELECT FROM information_schema.tables
                 WHERE table_schema = '{table.schema}'
-                AND table_name = '{table.name}'
+                AND table_name = '{table.table_name}'
             );
         """
 
@@ -117,19 +95,12 @@ class TimescaleRepository(
         result = cursor.fetchone()
         return result[0] if result else False
 
-    def _create_table(self, table: TimescaleTable, cursor: Psycopg2Cursor) -> None:
+    def _create_table(self, table: TimescaleRepositoryPayload, cursor: Psycopg2Cursor) -> None:
         """Create a table in the database if it does not exist."""
-
-        # If table already exists in the database, we don't need to create it.
-        if self._table_exists(table, cursor):
-            return
 
         # Set default values for primary_keys and unique_fields.
         if table.unique_fields is None:
             table.unique_fields = []
-
-        if table.primary_keys is None:
-            table.primary_keys = []
 
         columns: list[Any] = []
         for field, type_hint in table.model.__annotations__.items():
@@ -158,29 +129,27 @@ class TimescaleRepository(
         unique_constraints = ", ".join([f"UNIQUE ({field})" for field in table.unique_fields])
 
         # Add PRIMARY KEY constraints.
-        primary_keys_constraints = ", ".join(
-            [f"PRIMARY KEY ({field})" for field in table.primary_keys]
-        )
+        primary_keys_constraints = f"PRIMARY KEY ({table.primary_key})" if table.primary_key else ""
 
         # Combine columns, unique constraints, and primary key constraints.
         columns_def = ", ".join(columns)
         constraints = ", ".join(filter(None, [unique_constraints, primary_keys_constraints]))
 
-        if table.unique_fields or table.primary_keys:
-            query = f"CREATE TABLE IF NOT EXISTS {table.name} ({columns_def}, {constraints});"
+        if table.unique_fields or table.primary_key:
+            query = f"CREATE TABLE IF NOT EXISTS {table.table_name} ({columns_def}, {constraints});"
         else:
-            query = f"CREATE TABLE IF NOT EXISTS {table.name} ({columns_def});"
+            query = f"CREATE TABLE IF NOT EXISTS {table.table_name} ({columns_def});"
 
         # Execute the create table query.
         cursor.execute(query)
 
-        # Create a hypertable if the table has a hypertable key.
-        if table.hypertable_key and not self._hypertable_exists(table, cursor):
-            query = f"SELECT create_hypertable('{table.name}', by_range('{table.hypertable_key}'));"
-            cursor.execute(query)
+    def _create_hypertable(self, table: TimescaleRepositoryPayload, cursor: Psycopg2Cursor) -> None:
+        """Create a hypertable in the database."""
 
-        # Create the trigger for updating the updated_at field on update.
-        self._create_updated_at_trigger(table.name, cursor)
+        query = f"""
+            SELECT create_hypertable('{table.table_name}', by_range('{table.hypertable_key}'));
+        """
+        cursor.execute(query)
 
     def _create_updated_at_trigger(self, table_name: str, cursor: Psycopg2Cursor) -> None:
         """Create a trigger to automatically update the 'updated_at' column on row update."""
@@ -206,41 +175,37 @@ class TimescaleRepository(
         """
         cursor.execute(create_trigger_query)
 
-    def _parse_filters(self, filters: SQLFilter) -> str:
-        """Parse filters into a SQL statement."""
+    def _parse_load_options(self, options: LoadOptions) -> str:
+        """Parse load options into a compatible SQL statement."""
 
         query = ""
-        if filters.where:
+        if options.filters:
             query += " WHERE "
-            for i, where in enumerate(filters.where):
-                value = where.value
+            for i, filter in enumerate(options.filters):
+                value = filter.get("value")
                 if isinstance(value, str):
                     value = f"'{value}'"
-                query += f"{where.column} {where.operator} {value}"
-                if i < len(filters.where) - 1:
+                query += f"{filter.get('field')} {filter.get('operator')} {value}"
+                if i < len(options.filters) - 1:
                     query += " AND "
 
-        if filters.limit:
-            query += f" LIMIT {filters.limit}"
+        if options.limit:
+            query += f" LIMIT {options.limit}"
 
         return query
 
-    def _commit_and_close(self, cursor: Psycopg2Cursor) -> None:
-        """Commit the transaction and close the cursor."""
-        cursor.connection.commit()
-        cursor.close()
-
-    def save(self, options: TimescaleSaveOptions) -> SaveResult:
+    def save(self, key: str, df: pl.DataFrame) -> SaveResult:
         """Saves data into the Timescale table and returns the result."""
 
-        if options.df.is_empty():
+        if df.is_empty():
             return SaveResult(status="error", message="Dataframe is empty", rows_affected=0)
 
-        cursor = self._get_cursor(options.table)
+        payload = self.get_payload(key, TimescaleRepositoryPayload)
+        cursor = self._get_cursor(payload)
+
         try:
-            df = options.df
-            columns = options.df.columns
-            name = options.table.name
+            columns = df.columns
+            name = payload.table_name
 
             # Prepare the insert query.
             placeholders = ", ".join("%s" for _ in columns)
@@ -249,7 +214,7 @@ class TimescaleRepository(
             # Convert values for insertion.
             values = df.to_numpy()
             cursor.executemany(insert_query, values)
-            self._commit_and_close(cursor)
+            self._close_cursor(cursor)
 
             return SaveResult(status="success", message=None, rows_affected=df.shape[0])
         except Exception as e:
@@ -257,24 +222,24 @@ class TimescaleRepository(
         finally:
             cursor.close()
 
-    def load(self, options: TimescaleLoadOptions) -> pl.DataFrame:
+    def load(self, key: str, options: Optional[LoadOptions] = None) -> pl.DataFrame:
         """Loads data from a Timescale table and returns a polars DataFrame."""
-        table = options.table
-        filters = options.filters
+        payload = self.get_payload(key, TimescaleRepositoryPayload)
+        cursor = self._get_cursor(payload)
 
-        cursor = self._get_cursor(table)
-        parsed_filters = self._parse_filters(filters) if filters else ""
-        query = f"SELECT * FROM {table.name}{parsed_filters};"
+        parsed_filters = self._parse_load_options(options) if options else ""
+        query = f"SELECT * FROM {payload.table_name}{parsed_filters};"
 
         # Using polars to read data from the database.
         df = pl.read_database(connection=cursor.connection, query=query)
-        self._commit_and_close(cursor)
+        self._close_cursor(cursor)
 
         return df
 
-    def upsert(self, options: TimescaleSaveOptions) -> UpsertResult:
+    def upsert(self, key: str, df: pl.DataFrame) -> UpsertResult:
         """Upsert data into the Timescale table and returns the result."""
-        if options.df.is_empty():
+
+        if df.is_empty():
             return UpsertResult(
                 status="error",
                 message="Dataframe is empty",
@@ -282,14 +247,14 @@ class TimescaleRepository(
                 rows_updated=0,
             )
 
-        cursor = self._get_cursor(options.table)
-        df = options.df
-        columns = options.df.columns
-        table = options.table
+        payload = self.get_payload(key, TimescaleRepositoryPayload)
+        cursor = self._get_cursor(payload)
+
+        # Get the columns and keys for the upsert. The primary key is used by default.
         keys = (
-            table.primary_keys
-            if table.primary_keys
-            else table.unique_fields if table.unique_fields else []
+            [payload.primary_key]
+            if payload.primary_key
+            else payload.unique_fields if payload.unique_fields else []
         )
 
         try:
@@ -297,14 +262,16 @@ class TimescaleRepository(
             conflict_keys = ", ".join(keys)
 
             # Create the placeholders for the values.
-            placeholders = ", ".join("%s" for _ in columns)
+            placeholders = ", ".join("%s" for _ in df.columns)
 
             # Create the SQL part for updates, excluding the primary key columns.
-            update_cols = ", ".join([f"{col}=excluded.{col}" for col in columns if col not in keys])
+            update_cols = ", ".join(
+                [f"{col}=excluded.{col}" for col in df.columns if col not in keys]
+            )
 
             # SQL for upsert.
             upsert_sql = f"""
-                INSERT INTO {table.name} ({", ".join(columns)})
+                INSERT INTO {payload.table_name} ({", ".join(df.columns)})
                 VALUES ({placeholders})
                 ON CONFLICT({conflict_keys})
                 DO UPDATE SET {update_cols}
@@ -312,7 +279,8 @@ class TimescaleRepository(
             """
 
             # Upsert and counting the number of rows inserted and updated.
-            values = df.to_numpy()
+            # values = df.to_numpy()
+            values = df.rows()
             num_inserted = 0
             num_updated = 0
             for value in values:
@@ -339,4 +307,4 @@ class TimescaleRepository(
         except Exception as e:
             return UpsertResult(status="error", message=str(e), rows_inserted=0, rows_updated=0)
         finally:
-            self._commit_and_close(cursor)
+            self._close_cursor(cursor)
