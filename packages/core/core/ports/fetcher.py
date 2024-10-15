@@ -11,7 +11,6 @@ from datetime import date, datetime
 
 from core.models.asset import AssetDataFrame
 from core.models.bar import BarDataFrame
-from core.models.broker import Broker
 from core.models.calendar import CalendarDataFrame
 from core.models.timeframe import TimeFrame
 
@@ -80,12 +79,8 @@ class Fetcher(ABC):
     data from a specific broker.
     """
 
-    def __init__(self, broker: Broker, has_calendar: bool):
-        self.broker = broker
+    def __init__(self, has_calendar: bool):
         self.has_calendar = has_calendar
-
-    def __str__(self):
-        return f"Fetcher<{self.broker.value}>"
 
     @abstractmethod
     def fetch_calendar(self, params: FetchCalendarParams | None = None) -> CalendarDataFrame:
