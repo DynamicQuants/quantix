@@ -5,7 +5,7 @@
 
 """TimescaleDB Repository implementation."""
 
-from dataclasses import dataclass
+from dataclasses import astuple, dataclass
 from datetime import date, datetime
 from typing import Any, Optional, Union, final, get_args, get_origin
 
@@ -15,7 +15,15 @@ import pytz
 from psycopg2.extensions import cursor as Psycopg2Cursor
 from pydantic import AwareDatetime
 
-from core.ports.repository import LoadOptions, Repository, SaveResult, UpsertResult
+from core.ports.repository import (
+    LoadOptions,
+    RegistryAction,
+    RegistryItem,
+    Repository,
+    RepositoryError,
+    SaveResult,
+    UpsertResult,
+)
 
 from .timescale_client import TimescaleClient
 
@@ -24,7 +32,7 @@ from .timescale_client import TimescaleClient
 class TimescaleRepositoryPayload:
     """Defines the payload shape for Timescale repository."""
 
-    model: type[pt.Model]
+    model: type[pt.Model] | object
     db: str
     schema: str
     table_name: str
@@ -111,7 +119,7 @@ class TimescaleRepository(TimescaleClient, Repository):
                 int: "INTEGER",
                 str: "TEXT",
                 float: "REAL",
-                bool: "INTEGER",
+                bool: "BOOLEAN",
                 bytes: "BLOB",
                 date: "DATE",
                 datetime: "TIMESTAMPTZ",
@@ -279,7 +287,6 @@ class TimescaleRepository(TimescaleClient, Repository):
             """
 
             # Upsert and counting the number of rows inserted and updated.
-            # values = df.to_numpy()
             values = df.rows()
             num_inserted = 0
             num_updated = 0
@@ -287,7 +294,7 @@ class TimescaleRepository(TimescaleClient, Repository):
                 # Execute the upsert for each row.
                 cursor.execute(upsert_sql, value)
 
-                # Get the created_at and updated_at values.
+                # Get the updated_at value to check if the row was updated.
                 result = cursor.fetchone()
                 updated_at = result[1] if result else None
 
@@ -306,5 +313,50 @@ class TimescaleRepository(TimescaleClient, Repository):
             )
         except Exception as e:
             return UpsertResult(status="error", message=str(e), rows_inserted=0, rows_updated=0)
+        finally:
+            self._close_cursor(cursor)
+
+    def add_registry(self, item: RegistryItem) -> None:
+        """Add a new item to the registry table."""
+
+        payload = self.get_payload("registry", TimescaleRepositoryPayload)
+        cursor = self._get_cursor(payload)
+
+        try:
+            columns = item.__annotations__.keys()
+            values = astuple(item)
+            placeholders = ", ".join("%s" for _ in columns)
+            query = (
+                f"INSERT INTO {payload.table_name} ({', '.join(columns)}) VALUES ({placeholders});"
+            )
+            cursor.execute(query, values)
+        except Exception as e:
+            raise RepositoryError(
+                message=str(e),
+                code="CANNOT_ADD_REGISTRY_ITEM",
+            )
+        finally:
+            self._close_cursor(cursor)
+
+    def get_registry(self, action: RegistryAction, since: datetime) -> list[RegistryItem]:
+        """Get all registry items with the given action and created after the given timestamp."""
+
+        payload = self.get_payload("registry", TimescaleRepositoryPayload)
+        cursor = self._get_cursor(payload)
+
+        try:
+            query = f"SELECT * FROM {payload.table_name} WHERE action = %s AND created_at > %s;"
+            cursor.execute(query, (action, since))
+            result = cursor.fetchall()
+
+            # Convert the result into a list of RegistryItem objects. Note we use the first 6 fields
+            # of the result because the last two are created_at and updated_at (which are not part
+            # of the RegistryItem model).
+            return [RegistryItem(*item[:6]) for item in result]
+        except Exception as e:
+            raise RepositoryError(
+                message=str(e),
+                code="CANNOT_GET_REGISTRY_ITEM",
+            )
         finally:
             self._close_cursor(cursor)

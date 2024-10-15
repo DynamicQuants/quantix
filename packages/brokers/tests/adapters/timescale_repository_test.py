@@ -4,7 +4,8 @@ import pytest
 
 from brokers.adapters.timescale_repository import TimescaleRepository, TimescaleRepositoryPayload
 from core.models.bar import Bar, BarDataFrame
-from core.ports.repository import LoadOptions
+from core.models.broker import Broker
+from core.ports.repository import LoadOptions, RegistryAction, RegistryItem
 
 BARS_TABLE = TimescaleRepositoryPayload(
     model=Bar,
@@ -15,11 +16,19 @@ BARS_TABLE = TimescaleRepositoryPayload(
     hypertable_key="timestamp",
 )
 
+REGISTRY_TABLE = TimescaleRepositoryPayload(
+    model=RegistryItem,
+    db="test",
+    schema="public",
+    table_name=f"test_registry_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+    hypertable_key="timestamp",
+)
+
 
 class TestTimescaleRepository:
     @pytest.fixture
     def repository(self):
-        return TimescaleRepository(payloads={"bars": BARS_TABLE})
+        return TimescaleRepository(payloads={"registry": REGISTRY_TABLE, "bars": BARS_TABLE})
 
     @pytest.fixture
     def bars(self):
@@ -66,3 +75,22 @@ class TestTimescaleRepository:
         options = LoadOptions(limit=1)
         df = repository.load("bars", options)
         assert df.shape[0] == 1
+
+    def test_add_and_get_registry(self, repository: TimescaleRepository):
+        item = RegistryItem(
+            timestamp=datetime.now(),
+            action=RegistryAction.FETCH_BARS,
+            log="Test",
+            broker=Broker.ALPACA,
+            n_records=2,
+            was_full=False,
+        )
+        repository.add_registry(item)
+
+        result = repository.get_registry(
+            action=RegistryAction.FETCH_BARS,
+            since=datetime(2024, 1, 1),
+        )
+        print(result)
+
+        assert len(result) == 1

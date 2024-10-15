@@ -8,19 +8,28 @@
 from typing import final
 
 from core.market_data import MarketData
+from core.models.broker import Broker
 from core.models.calendar import Calendar
+from core.ports.repository import RegistryItem
 
 from .adapters.alpaca_fetcher import AlpacaFetcher
 from .adapters.timescale_repository import TimescaleRepository, TimescaleRepositoryPayload
 
 _PAYLOAD: dict[str, TimescaleRepositoryPayload] = {
+    "registry": TimescaleRepositoryPayload(
+        model=RegistryItem,
+        db="test",
+        schema="public",
+        table_name="registry",
+        hypertable_key="timestamp",
+    ),
     "calendar": TimescaleRepositoryPayload(
         model=Calendar,
         db="test",
         schema="public",
         table_name="calendar",
         primary_key="date",
-    )
+    ),
 }
 
 
@@ -31,6 +40,7 @@ class AlpacaMarketData(MarketData):
     def __init__(self):
         MarketData.__init__(
             self,
+            broker=Broker.ALPACA,
             fetcher=AlpacaFetcher(),
             repository=TimescaleRepository(payloads=_PAYLOAD),
         )

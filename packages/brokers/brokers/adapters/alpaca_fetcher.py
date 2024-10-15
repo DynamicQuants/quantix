@@ -37,7 +37,7 @@ class AlpacaFetcher(AlpacaDataClient, Fetcher):
 
     def __init__(self):
         AlpacaDataClient.__init__(self)
-        Fetcher.__init__(self, broker=Broker.ALPACA, has_calendar=True)
+        Fetcher.__init__(self, has_calendar=True)
 
     def fetch_calendar(self, params: FetchCalendarParams | None = None) -> CalendarDataFrame:
         request = GetCalendarRequest(start=params.start, end=params.end) if params else None
