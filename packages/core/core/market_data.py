@@ -6,13 +6,14 @@
 """MarketData class that is responsible for fetching, storing, and retrieving market data."""
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from typing import Literal, Optional
 
 import polars as pl
 
+from .models.broker import Broker
 from .ports.fetcher import FetchCalendarParams, Fetcher
-from .ports.repository import Repository
+from .ports.repository import RegistryAction, RegistryItem, Repository
 
 
 @dataclass
@@ -38,7 +39,8 @@ class MarketData:
     operations are saved in a registry for logging purposes.
     """
 
-    def __init__(self, fetcher: Fetcher, repository: Repository) -> None:
+    def __init__(self, broker: Broker, fetcher: Fetcher, repository: Repository) -> None:
+        self._broker = broker
         self._fetcher = fetcher
         self._repository = repository
 
@@ -49,6 +51,21 @@ class MarketData:
         result = self._repository.upsert("calendar", calendar)
 
         if result.status == "error":
-            raise MarketDataError(message="Failed to upsert calendar", code="SAVE_CALENDAR_FAILED")
+            raise MarketDataError(
+                message=f"Failed to upsert calendar: {result.message}",
+                code="SAVE_CALENDAR_FAILED",
+            )
+
+        # If everything went well, save a log in the registry.
+        self._repository.add_registry(
+            RegistryItem(
+                timestamp=datetime.now(),
+                action=RegistryAction.FETCH_CALENDAR,
+                broker=self._broker,
+                log="Calendar fetched and upserted",
+                n_records=calendar.shape[0],
+                was_full=False,
+            )
+        )
 
         return calendar
