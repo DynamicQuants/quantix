@@ -1207,17 +1207,6 @@ doc = ["Sphinx (>=7)", "packaging", "sphinx-autodoc-typehints (>=1.2.0)", "sphin
 test = ["coverage[toml] (>=7)", "mypy (>=1.2.0)", "pytest (>=7)"]
 
 [[package]]
-name = "types-pytz"
-version = "2024.2.0.20240913"
-description = "Typing stubs for pytz"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "types-pytz-2024.2.0.20240913.tar.gz", hash = "sha256:4433b5df4a6fc587bbed41716d86a5ba5d832b4378e506f40d34bc9c81df2c24"},
-    {file = "types_pytz-2024.2.0.20240913-py3-none-any.whl", hash = "sha256:a1eebf57ebc6e127a99d2fa2ba0a88d2b173784ef9b3defcc2004ab6855a44df"},
-]
-
-[[package]]
 name = "typing-extensions"
 version = "4.12.2"
 description = "Backported and Experimental Type Hints for Python 3.8+"
@@ -1467,4 +1456,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.12"
-content-hash = "53631ef895b847cb8d18a3b19f0d76b9cd8382f4c381136600e94e1e7848b43d"
+content-hash = "aacc610d890bce177fe3741096b5c6fd41ae3e760b0d347e23b26718c3cbaf91"
