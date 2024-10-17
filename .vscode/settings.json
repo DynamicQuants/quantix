@@ -26,7 +26,7 @@
   ],
   "python.analysis.diagnosticSeverityOverrides": {
     // For packages with missing type stubs we don't want to see errors.
-    "reportMissingTypeStubs": "none"
+    "reportMissingTypeStubs": "warning",
   },
   "mypy-type-checker.args": ["--ignore-missing-imports"],
   /**
