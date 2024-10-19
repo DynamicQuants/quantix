@@ -2,9 +2,11 @@
   "version": "0.2",
   "language": "en",
   "words": [
+    "csearch",
     "Dataframe",
     "dotenv",
     "dtype",
+    "dtypes",
     "executemany",
     "Forex",
     "hypertable",
@@ -22,6 +24,7 @@
     "sqlalchemy",
     "timeframes",
     "TIMESCALEDB",
+    "timeseries",
     "TIMESTAMPTZ",
     "upserted",
     "vwap"
