@@ -11,6 +11,7 @@ from typing import Any, Callable, Optional
 
 from typing_extensions import Self
 
+from .datatypes import float32
 from .logger import Logger
 
 
@@ -60,5 +61,5 @@ class PerformanceTimer:
         return wrapper
 
     @property
-    def elapsed_time(self) -> float:
-        return self.end_time - self.start_time
+    def elapsed_time(self) -> float32:
+        return float32(self.end_time - self.start_time)
