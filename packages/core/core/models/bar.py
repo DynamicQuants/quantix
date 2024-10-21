@@ -7,58 +7,77 @@
 
 from typing import Optional, final
 
-import patito as pt
-from pydantic import AwareDatetime
+from core.utils.dataframe import (
+    Category,
+    DataContainer,
+    DataContainerConfig,
+    DataFrameModel,
+    Field,
+    LazyFrame,
+    Series,
+    Timestamp,
+)
+
+from .broker import Broker
 
 
 @final
-class Bar(pt.Model):
+class Bar(DataFrameModel):
     """
     A bar better known as a candlestick is a representation of the price movement of an asset over
     a specific period of time. It contains the opening, high, low, and closing prices of the asset
     as well as the volume of the asset traded during that period.
     """
 
-    symbol: str
-    """The asset symbol of the bar."""
-
-    timestamp: AwareDatetime = pt.Field(unique=True)
+    timestamp: Series[Timestamp] = Field(coerce=True)
     """The timestamp of the bar, in seconds since the Unix epoch."""
 
-    open: float = pt.Field(gt=0)
+    broker: Series[Category] = Field(
+        nullable=False,
+        coerce=True,
+        isin=[broker.value for broker in Broker],
+    )
+    """The broker that provided the bar."""
+
+    symbol: Series[str] = Field(nullable=False)
+    """The asset symbol of the bar."""
+
+    timeframe: Series[str] = Field(nullable=False)
+    """The timeframe of the bar."""
+
+    open: Series[float] = Field(gt=0)
     """The opening price of the bar."""
 
-    high: float = pt.Field(gt=0)
+    high: Series[float] = Field(gt=0)
     """The highest price of the bar."""
 
-    low: float = pt.Field(gt=0)
+    low: Series[float] = Field(gt=0)
     """The lowest price of the bar."""
 
-    close: float = pt.Field(gt=0)
+    close: Series[float] = Field(gt=0)
     """The closing price of the bar."""
 
-    volume: float = pt.Field(gt=0)
+    volume: Series[float] = Field(gt=0)
     """The volume of the bar."""
 
-    vwap: Optional[float] = None
+    vwap: Optional[Series[float]] = Field(nullable=True)
     """The volume-weighted average price of the bar."""
 
 
-BarDataFrame = pt.DataFrame[Bar]
-"""
-A DataFrame containing a list of bars. This DataFrame must be validated using the Bar model.
+@final
+class BarData(DataContainer):
+    """
+    Bar data container which contains the bar dataframe and validates it using the Bar model.
+    """
 
-For example:
-.. code-block:: python
-    data = Bar.examples(
-        data={
-            "symbol": ["AAPL", "AAPL"],
-            "timestamp": ["2021-01-01T09:30:00Z","2021-01-01T09:31:00Z"],
-            "open": [100.0, 101.0],
-            "high": [100.0, 101.0],
-            "low": [100.0, 101.0],
-            "close": [100.0, 101.0],
-            "volume": [1000, 1000],
-        }
-    )
-"""
+    def __init__(self, lf: LazyFrame) -> None:
+        super().__init__(
+            DataContainerConfig(
+                name="bars",
+                schema=Bar.to_schema(),
+                lf=lf,
+                kind="timeseries",
+                primary_key="timestamp",
+                unique_fields=["broker", "symbol", "timeframe"],
+            )
+        )

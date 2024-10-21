@@ -5,17 +5,29 @@
 
 """Defines the data of a calendar that represents the trading hours of a trading venue."""
 
-import datetime
+
 from typing import final
 
-import patito as pt
-from pydantic import AwareDatetime, field_validator, model_validator
+from core.utils.dataframe import (
+    Category,
+    DataContainer,
+    DataContainerConfig,
+    DataFrameModel,
+    Date,
+    Field,
+    LazyFrame,
+    PolarsData,
+    Series,
+    Timestamp,
+    col,
+    dataframe_check,
+)
 
-from core.utils.datetime_utils import DateTimeUtils
+from .broker import Broker
 
 
 @final
-class Calendar(pt.Model):
+class Calendar(DataFrameModel):
     """
     Calendar data for a specific trading venue.
 
@@ -23,44 +35,43 @@ class Calendar(pt.Model):
     the date of the trading day, as well as the opening and closing times of the trading day.
     """
 
-    date: datetime.date = pt.Field(unique=True)
-    """The date of the trading day."""
-
-    open: AwareDatetime
-    """The opening time of the trading day."""
-
-    close: AwareDatetime
-    """The closing time of the trading day."""
-
-    @field_validator("open")
-    @classmethod
-    def validate_open(cls, value: AwareDatetime) -> AwareDatetime:
-        return DateTimeUtils.ensure_utc(value)
-
-    @field_validator("close")
-    @classmethod
-    def validate_close(cls, value: AwareDatetime) -> AwareDatetime:
-        return DateTimeUtils.ensure_utc(value)
-
-    @model_validator(mode="after")
-    def validate_open_lower_than_close(self):
-        if self.open >= self.close:
-            raise ValueError("The opening time must be earlier than the closing time.")
-        return self
-
-
-CalendarDataFrame = pt.DataFrame[Calendar]
-"""
-A DataFrame containing a list of calendar data. This DataFrame must be validated using the
-Calendar model.
-
-For example:
-.. code-block:: python
-    data = Calendar.examples(
-        data={
-            "date": ["2021-01-01", "2021-01-02"],
-            "open": ["2021-01-01T09:30:00Z", "2021-01-02T09:30:00Z"],
-            "close": ["2021-01-01T16:00:00Z", "2021-01-02T16:00:00Z"],
-        }
+    broker: Series[Category] = Field(
+        nullable=False,
+        coerce=True,
+        isin=[broker.value for broker in Broker],
     )
-"""
+    """The broker that provided the calendar."""
+
+    date: Series[Date] = Field(nullable=False, coerce=True)
+    """Date of the trading day."""
+
+    open: Series[Timestamp] = Field(nullable=False, coerce=True)
+    """Opening time of the trading day."""
+
+    close: Series[Timestamp] = Field(nullable=False, coerce=True)
+    """Closing time of the trading day."""
+
+    @dataframe_check
+    def open_lower_than_close(cls, df: PolarsData):
+        """Check if the product of the open and close prices is negative."""
+        return df.lazyframe.select(col("open").gt(col("close")))
+
+
+@final
+class CalendarData(DataContainer):
+    """
+    Calendar data container which contains the calendar dataframe and validates it using the
+    Calendar model.
+    """
+
+    def __init__(self, lf: LazyFrame) -> None:
+        super().__init__(
+            DataContainerConfig(
+                name="calendar",
+                schema=Calendar.to_schema(),
+                lf=lf,
+                kind="timeseries",
+                primary_key="date",
+                unique_fields=["broker"],
+            )
+        )

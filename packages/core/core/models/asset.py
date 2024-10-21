@@ -8,9 +8,17 @@
 from enum import Enum
 from typing import final
 
-import patito as pt
+from core.utils.dataframe import (
+    Category,
+    DataContainer,
+    DataContainerConfig,
+    DataFrameModel,
+    Field,
+    LazyFrame,
+    Series,
+)
 
-from core.models.broker import Broker
+from .broker import Broker
 
 
 @final
@@ -42,7 +50,8 @@ class AssetStatus(str, Enum):
     INACTIVE = "Inactive"
 
 
-class Asset(pt.Model):
+@final
+class Asset(DataFrameModel):
     """
     Defines the data of an asset that can be traded by the broker.
 
@@ -51,60 +60,64 @@ class Asset(pt.Model):
     and to place trades.
     """
 
-    name: str = pt.Field(unique=True)
+    broker: Series[str] = Field(
+        nullable=False,
+        coerce=True,
+        isin=[broker.value for broker in Broker],
+    )
+    """The broker that provides access to the asset."""
+
+    name: Series[str] = Field(unique=True)
     """
     The name of the asset. For example, for equity, this could be 'Apple Inc' for Apple Inc.
     or 'Bitcoin' for Bitcoin.
     """
 
-    symbol: str = pt.Field(unique=True)
+    symbol: Series[str] = Field(unique=True)
     """
     A symbol that represents the asset. For example, for equity, this could be 'AAPL' for
     Apple Inc or 'BTC' for Bitcoin.
     """
 
-    exchange: str
+    exchange: Series[str] = Field(nullable=False)
     """
     The exchange in which the asset is traded. For example, for equity, this could be 'NASDAQ'
     or 'NYSE'. Or for cryptocurrency, this could be 'Binance' or 'Coinbase'.
     """
 
-    broker: Broker
-    """
-    The broker that provides access to the asset.
-    """
-
-    asset_class: AssetClass
-    """
-    The type of asset. Can be 'equity', 'crypto', or 'forex'.
-    """
-
-    tradable: bool
-    """
-    Indicates whether the asset is currently active and available for trading.
-    """
-
-    status: AssetStatus
-    """
-    The asset status in the broker.
-    """
-
-
-AssetDataFrame = pt.DataFrame[Asset]
-"""
-A DataFrame type that contains a list of assets. It validates using the Asset model.
-
-For example:
-.. code-block:: python
-    data = Asset.examples(
-        data={
-            "name": ["Apple Inc", "Bitcoin"],
-            "symbol": ["AAPL", "BTC"],
-            "exchange": ["NASDAQ", "Binance"],
-            "broker": ["Alpaca", "Binance"],
-            "asset_class": ["Equity", "Crypto"],
-            "tradable": [True, True],
-            "status": ["Active", "Active"],
-        }
+    asset_class: Series[Category] = Field(
+        nullable=False,
+        coerce=True,
+        isin=[asset.value for asset in AssetClass],
     )
-"""
+    """The type of asset. Can be 'equity', 'crypto', 'forex', etc."""
+
+    tradable: Series[bool] = Field(nullable=False)
+    """Indicates whether the asset is currently active and available for trading."""
+
+    status: Series[Category] = Field(
+        nullable=False,
+        coerce=True,
+        isin=[status.value for status in AssetStatus],
+    )
+    """The asset status in the broker."""
+
+
+@final
+class AssetData(DataContainer):
+    """
+    Asset data container which contains the asset dataframe and validates it using the Asset
+    model.
+    """
+
+    def __init__(self, lf: LazyFrame) -> None:
+        super().__init__(
+            DataContainerConfig(
+                name="assets",
+                schema=Asset.to_schema(),
+                lf=lf,
+                kind="non-relational",
+                primary_key="broker,symbol",
+                unique_fields=[],
+            )
+        )

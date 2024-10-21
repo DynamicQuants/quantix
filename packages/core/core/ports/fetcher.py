@@ -9,9 +9,9 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import date, datetime
 
-from core.models.asset import AssetDataFrame
-from core.models.bar import BarDataFrame
-from core.models.calendar import CalendarDataFrame
+from core.models.asset import AssetData
+from core.models.bar import BarData
+from core.models.calendar import CalendarData
 from core.models.timeframe import TimeFrame
 
 
@@ -83,30 +83,30 @@ class Fetcher(ABC):
         self.has_calendar = has_calendar
 
     @abstractmethod
-    def fetch_calendar(self, params: FetchCalendarParams | None = None) -> CalendarDataFrame:
+    def fetch_calendar(self, params: FetchCalendarParams | None = None) -> CalendarData:
         """
         Fetches the trading calendar for the specified broker.
 
         This method should return a DataFrame containing the trading calendar for the specified
-        broker. The DataFrame must be validated using the Calendar model.
+        broker.
         """
         ...
 
     @abstractmethod
-    def fetch_assets(self) -> AssetDataFrame:
+    def fetch_assets(self) -> AssetData:
         """
         Fetches the list of assets available for trading by the broker.
 
         This method should return a DataFrame containing the list of assets available for trading
-        by the broker. The DataFrame must be validated using the Asset model.
+        by the broker.
         """
         ...
 
     @abstractmethod
-    def fetch_bars(self, params: FetchBarsParams) -> BarDataFrame:
+    def fetch_bars(self, params: FetchBarsParams) -> BarData:
         """
         Fetches the bars for the specified asset symbol and timeframe (check the FetchBarsParams).
 
         This method should return a DataFrame containing the bars for the specified asset symbol
-        and timeframe. The DataFrame must be validated using the Bar model.
+        and timeframe.
         """

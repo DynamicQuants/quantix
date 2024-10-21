@@ -9,11 +9,16 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Literal, Optional
 
-import polars as pl
+from core.utils.performance import PerformanceTimer
+from core.utils.registry import Registry
 
 from .models.broker import Broker
-from .ports.fetcher import FetchCalendarParams, Fetcher
-from .ports.repository import RegistryAction, RegistryItem, Repository
+from .models.timeframe import TimeFrame
+from .ports.fetcher import FetchBarsParams, FetchCalendarParams, Fetcher
+from .ports.repository import Repository
+from .utils.dataframe import DataFrame
+
+DEFAULT_BAR_START = datetime(1970, 1, 1)
 
 
 @dataclass
@@ -24,10 +29,28 @@ class GetCalendarOptions:
     end: date | None = None
 
 
+@dataclass
+class GetBarsOptions:
+    """Represents the optional filtering to get bars for a symbol."""
+
+    start: datetime
+    end: datetime | None = None
+    limit: int | None = None
+    batch_size: int | None = None
+
+
 class MarketDataError(Exception):
     """Market data error."""
 
-    def __init__(self, message: str, code: Literal["SAVE_CALENDAR_FAILED"]) -> None:
+    def __init__(
+        self,
+        message: str,
+        code: Literal[
+            "SAVE_CALENDAR_FAILED",
+            "SAVE_BARS_FAILED",
+            "SAVE_ASSETS_FAILED",
+        ],
+    ) -> None:
         super().__init__(message)
         self.code = code
 
@@ -43,12 +66,17 @@ class MarketData:
         self._broker = broker
         self._fetcher = fetcher
         self._repository = repository
+        self._registry = Registry(repository, broker)
 
-    def get_calendar(self, options: Optional[GetCalendarOptions] = None) -> pl.DataFrame:
+    def get_calendar(self, options: Optional[GetCalendarOptions] = None) -> DataFrame:
         """Get the calendar of trading days for a given broker."""
-        params = FetchCalendarParams(start=options.start, end=options.end) if options else None
-        calendar = self._fetcher.fetch_calendar(params)
-        result = self._repository.upsert("calendar", calendar)
+
+        with PerformanceTimer("Fetch calendar") as fetch_timer:
+            params = FetchCalendarParams(start=options.start, end=options.end) if options else None
+            calendar = self._fetcher.fetch_calendar(params)
+
+        with PerformanceTimer("Upsert calendar") as upsert_timer:
+            result = self._repository.upsert(calendar)
 
         if result.status == "error":
             raise MarketDataError(
@@ -56,16 +84,79 @@ class MarketData:
                 code="SAVE_CALENDAR_FAILED",
             )
 
-        # If everything went well, save a log in the registry.
-        self._repository.add_registry(
-            RegistryItem(
-                timestamp=datetime.now(),
-                action=RegistryAction.FETCH_CALENDAR,
-                broker=self._broker,
-                log="Calendar fetched and upserted",
-                n_records=calendar.shape[0],
-                was_full=False,
-            )
+        self._registry.add(
+            action="GET_CALENDAR",
+            log="Calendar fetched and upserted",
+            rows_inserted=result.rows_inserted,
+            rows_updated=result.rows_updated,
+            execution_time=fetch_timer.elapsed_time + upsert_timer.elapsed_time,
         )
 
-        return calendar
+        return calendar.df()
+
+    def get_assets(self) -> DataFrame:
+        """Get the assets for a given broker."""
+
+        with PerformanceTimer("Fetch assets") as fetch_timer:
+            assets = self._fetcher.fetch_assets()
+
+        with PerformanceTimer("Upsert assets") as upsert_timer:
+            result = self._repository.upsert(assets)
+
+        if result.status == "error":
+            raise MarketDataError(
+                message=f"Failed to upsert assets: {result.message}",
+                code="SAVE_ASSETS_FAILED",
+            )
+
+        self._registry.add(
+            action="GET_ASSETS",
+            log="Assets fetched and upserted",
+            rows_inserted=result.rows_inserted,
+            rows_updated=result.rows_updated,
+            execution_time=fetch_timer.elapsed_time + upsert_timer.elapsed_time,
+        )
+
+        return assets.df()
+
+    def get_bars(
+        self,
+        symbol: str,
+        timeframe: TimeFrame,
+        options: Optional[GetBarsOptions] = None,
+    ) -> DataFrame:
+        """Get bars for a symbol and timeframe using the given options."""
+
+        params = (
+            FetchBarsParams(
+                symbol=symbol,
+                timeframe=timeframe,
+                start=options.start,
+                end=options.end,
+                limit=options.limit,
+            )
+            if options
+            else FetchBarsParams(symbol=symbol, timeframe=timeframe, start=DEFAULT_BAR_START)
+        )
+
+        with PerformanceTimer("Fetch bars") as fetch_timer:
+            bars = self._fetcher.fetch_bars(params)
+
+        with PerformanceTimer("Upsert bars") as upsert_timer:
+            result = self._repository.upsert(bars)
+
+        if result.status == "error":
+            raise MarketDataError(
+                message=f"Failed to upsert bars: {result.message}",
+                code="SAVE_BARS_FAILED",
+            )
+
+        self._registry.add(
+            action="GET_BARS",
+            log="Bars fetched and upserted",
+            rows_inserted=result.rows_inserted,
+            rows_updated=result.rows_updated,
+            execution_time=fetch_timer.elapsed_time + upsert_timer.elapsed_time,
+        )
+
+        return bars.df()
