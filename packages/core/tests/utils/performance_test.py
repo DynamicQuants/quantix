@@ -40,22 +40,20 @@ def test_performance_timer_elapsed_time_property():
     assert timer.elapsed_time == 1
 
 
-def test_performance_timer_print_with_name(capsys):
+def test_performance_timer_print_with_name(caplog):
     with patch("time.perf_counter", side_effect=[0, 1]):
         with PerformanceTimer("Named timer"):
             pass
 
-    captured = capsys.readouterr()
-    assert "Named timer executed in 1.000000 seconds" in captured.out
+    assert "Named timer executed in 1.000000 seconds" in caplog.text
 
 
-def test_performance_timer_print_without_name(capsys):
+def test_performance_timer_print_without_name(caplog):
     with patch("time.perf_counter", side_effect=[0, 1]):
         with PerformanceTimer():
             pass
 
-    captured = capsys.readouterr()
-    assert "Code block executed in 1.000000 seconds" in captured.out
+    assert "Code block executed in 1.000000 seconds" in caplog.text
 
 
 def test_performance_timer_exception_handling():
