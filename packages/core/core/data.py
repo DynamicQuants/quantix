@@ -3,7 +3,7 @@
 # This source code is part of Quantix library and is licensed under the MIT
 # license found in the LICENSE file in the root directory of this source tree.
 
-"""MarketData class that is responsible for fetching, storing, and retrieving market data."""
+"""Data class that is responsible for fetching, storing, and retrieving market data."""
 
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -39,7 +39,7 @@ class GetBarsOptions:
     batch_size: int | None = None
 
 
-class MarketDataError(Exception):
+class DataError(Exception):
     """Market data error."""
 
     def __init__(
@@ -55,11 +55,33 @@ class MarketDataError(Exception):
         self.code = code
 
 
-class MarketData:
+class Data:
     """
-    MarketData class that is responsible for fetching, storing, and retrieving market data. It
+    Data class that is responsible for fetching, storing, and retrieving market data. It
     handles the communication between the fetcher and the repository in a optimized way. All
     operations are saved in a registry for logging purposes.
+
+    This class is designed to be extended by the brokers to implement the specific logic for
+    each broker (if needed). It requires the broker, fetcher, and repository to be passed in the
+    constructor.
+
+    Args:
+        broker: The broker that the data is for.
+        fetcher: The fetcher that fetches the data from the broker.
+        repository: The repository that stores the data.
+
+    Example:
+
+    ```python
+    class AlpacaData(Data):
+        def __init__(self):
+            Data.__init__(
+                self,
+                broker=Broker.ALPACA,
+                fetcher=AlpacaFetcher(),
+                repository=TimescaleRepository(),
+            )
+    ```
     """
 
     def __init__(self, broker: Broker, fetcher: Fetcher, repository: Repository) -> None:
@@ -79,7 +101,7 @@ class MarketData:
             result = self._repository.upsert(calendar)
 
         if result.status == "error":
-            raise MarketDataError(
+            raise DataError(
                 message=f"Failed to upsert calendar: {result.message}",
                 code="SAVE_CALENDAR_FAILED",
             )
@@ -104,7 +126,7 @@ class MarketData:
             result = self._repository.upsert(assets)
 
         if result.status == "error":
-            raise MarketDataError(
+            raise DataError(
                 message=f"Failed to upsert assets: {result.message}",
                 code="SAVE_ASSETS_FAILED",
             )
@@ -146,7 +168,7 @@ class MarketData:
             result = self._repository.upsert(bars)
 
         if result.status == "error":
-            raise MarketDataError(
+            raise DataError(
                 message=f"Failed to upsert bars: {result.message}",
                 code="SAVE_BARS_FAILED",
             )
