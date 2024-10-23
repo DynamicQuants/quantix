@@ -1,1 +1,1 @@
-"""Provides all core implementations for specific brokers"""
+"""Provides all core brokers implementations."""
