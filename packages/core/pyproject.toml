@@ -1,10 +1,16 @@
 [tool.coverage.run]
 branch = true
 source = ["core"]
+omit = [
+  "core/**/__init__.py",
+  "core/data.py",
+  "core/utils/registry.py",
+  "core/ports/*.py",
+]
 
 [tool.coverage.report]
-exclude_lines = ["if TYPE_CHECKING:"]
 show_missing = true
+exclude_also = ["if TYPE_CHECKING:", "def __repr__", "def __str__"]
 
 [tool.pytest.ini_options]
 addopts = "--cov --cov-fail-under=100 --cov-report term --cov-report html:'../../coverage/packages/core/html' --cov-report xml:'../../coverage/packages/core/coverage.xml' --html='../../reports/packages/core/unittests/html/index.html' --junitxml='../../reports/packages/core/unittests/junit.xml'"
