@@ -61,7 +61,7 @@ class RegistryDataContainer(DataContainer):
         super().__init__(
             DataContainerConfig(
                 name="registry",
-                schema=RegistryItem.to_schema(),
+                model=RegistryItem,
                 lf=lf,
                 kind="non-relational",
                 primary_key="uuid",

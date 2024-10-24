@@ -9,7 +9,6 @@ from enum import Enum
 from typing import final
 
 from core.utils.dataframe import (
-    Category,
     DataContainer,
     DataContainerConfig,
     DataFrameModel,
@@ -61,60 +60,59 @@ class Asset(DataFrameModel):
     """
 
     broker: Series[str] = Field(
+        description="The broker that provides access to the asset",
         nullable=False,
-        coerce=True,
         isin=[broker.value for broker in Broker],
     )
-    """The broker that provides access to the asset."""
 
-    name: Series[str] = Field(unique=True)
-    """
-    The name of the asset. For example, for equity, this could be 'Apple Inc' for Apple Inc.
-    or 'Bitcoin' for Bitcoin.
-    """
+    name: Series[str] = Field(
+        description="""The name of the asset. For example, for equity, this could be 'Apple Inc'
+        for Apple Inc. or 'Bitcoin' for Bitcoin.""",
+        unique=True,
+    )
 
-    symbol: Series[str] = Field(unique=True)
-    """
-    A symbol that represents the asset. For example, for equity, this could be 'AAPL' for
-    Apple Inc or 'BTC' for Bitcoin.
-    """
+    symbol: Series[str] = Field(
+        description="""A symbol that represents the asset. For example, for equity, this could be
+        'AAPL' for Apple Inc or 'BTC' for Bitcoin.""",
+        unique=True,
+    )
 
-    exchange: Series[str] = Field(nullable=False)
-    """
-    The exchange in which the asset is traded. For example, for equity, this could be 'NASDAQ'
-    or 'NYSE'. Or for cryptocurrency, this could be 'Binance' or 'Coinbase'.
-    """
+    exchange: Series[str] = Field(
+        description="""The exchange in which the asset is traded. For example, for equity, this
+        could be 'NASDAQ' or 'NYSE'. Or for crypto, this could be 'Binance' or 'Coinbase'.""",
+    )
 
-    asset_class: Series[Category] = Field(
+    asset_class: Series[str] = Field(
+        description="""The type of asset. Can be 'equity', 'crypto', 'forex', etc.""",
         nullable=False,
         coerce=True,
         isin=[asset.value for asset in AssetClass],
     )
-    """The type of asset. Can be 'equity', 'crypto', 'forex', etc."""
 
-    tradable: Series[bool] = Field(nullable=False)
-    """Indicates whether the asset is currently active and available for trading."""
-
-    status: Series[Category] = Field(
+    tradable: Series[bool] = Field(
+        description="""Indicates whether the asset is currently active and available for trading.""",
         nullable=False,
-        coerce=True,
+    )
+
+    status: Series[str] = Field(
+        description="""The asset status in the broker.""",
+        nullable=False,
         isin=[status.value for status in AssetStatus],
     )
-    """The asset status in the broker."""
 
 
 @final
 class AssetData(DataContainer):
     """
-    Asset data container which contains the asset dataframe and validates it using the Asset
-    model.
+    Asset data container which contains a dataframe of assets and validates it using the Asset
+    model. If the dataframe is not valid, a `DataFrameValidationError` exception is raised.
     """
 
     def __init__(self, lf: LazyFrame) -> None:
         super().__init__(
             DataContainerConfig(
                 name="assets",
-                schema=Asset.to_schema(),
+                model=Asset,
                 lf=lf,
                 kind="non-relational",
                 primary_key="broker,symbol",

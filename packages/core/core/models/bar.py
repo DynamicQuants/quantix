@@ -8,7 +8,6 @@
 from typing import Optional, final
 
 from core.utils.dataframe import (
-    Category,
     DataContainer,
     DataContainerConfig,
     DataFrameModel,
@@ -19,6 +18,7 @@ from core.utils.dataframe import (
 )
 
 from .broker import Broker
+from .timeframe import TFPreset, TimeFrame
 
 
 @final
@@ -29,52 +29,87 @@ class Bar(DataFrameModel):
     as well as the volume of the asset traded during that period.
     """
 
-    timestamp: Series[Timestamp] = Field(coerce=True)
-    """The timestamp of the bar, in seconds since the Unix epoch."""
+    timestamp: Series[Timestamp] = Field(
+        description="""The timestamp of the bar, in seconds since the Unix epoch.""",
+        coerce=True,
+    )
 
-    broker: Series[Category] = Field(
+    broker: Series[str] = Field(
+        description="""The broker that provided the bar.""",
         nullable=False,
         coerce=True,
         isin=[broker.value for broker in Broker],
     )
-    """The broker that provided the bar."""
 
-    symbol: Series[str] = Field(nullable=False)
-    """The asset symbol of the bar."""
+    symbol: Series[str] = Field(
+        description="""The asset symbol of the bar.""",
+        nullable=False,
+        coerce=True,
+    )
 
-    timeframe: Series[str] = Field(nullable=False)
-    """The timeframe of the bar."""
+    timeframe: Series[str] = Field(
+        description="""The bar timeframe.""",
+        nullable=False,
+        coerce=True,
+        # Only include the timeframes that are defined in the TFPreset.
+        isin=[tf.name_value for tf in TFPreset.__dict__.values() if isinstance(tf, TimeFrame)],
+    )
 
-    open: Series[float] = Field(gt=0)
-    """The opening price of the bar."""
+    open: Series[float] = Field(
+        description="""The opening price of the bar.""",
+        nullable=False,
+        coerce=True,
+        gt=0,
+    )
 
-    high: Series[float] = Field(gt=0)
-    """The highest price of the bar."""
+    high: Series[float] = Field(
+        description="""The highest price of the bar.""",
+        nullable=False,
+        coerce=True,
+        gt=0,
+    )
 
-    low: Series[float] = Field(gt=0)
-    """The lowest price of the bar."""
+    low: Series[float] = Field(
+        description="""The lowest price of the bar.""",
+        nullable=False,
+        coerce=True,
+        gt=0,
+    )
 
-    close: Series[float] = Field(gt=0)
-    """The closing price of the bar."""
+    close: Series[float] = Field(
+        description="""The closing price of the bar.""",
+        nullable=False,
+        coerce=True,
+        gt=0,
+    )
 
-    volume: Series[float] = Field(gt=0)
-    """The volume of the bar."""
+    volume: Series[float] = Field(
+        description="""The volume of the bar.""",
+        nullable=False,
+        coerce=True,
+        gt=0,
+    )
 
-    vwap: Optional[Series[float]] = Field(nullable=True)
-    """The volume-weighted average price of the bar."""
+    vwap: Optional[Series[float]] = Field(
+        description="""The volume-weighted average price of the bar.""",
+        nullable=True,
+        coerce=True,
+        gt=0,
+    )
 
 
 @final
 class BarData(DataContainer):
     """
-    Bar data container which contains the bar dataframe and validates it using the Bar model.
+    Bar data container which contains a dataframe of bars and validates it using the Bar model.
+    If the dataframe is not valid, a `DataFrameValidationError` exception is raised.
     """
 
     def __init__(self, lf: LazyFrame) -> None:
         super().__init__(
             DataContainerConfig(
                 name="bars",
-                schema=Bar.to_schema(),
+                model=Bar,
                 lf=lf,
                 kind="timeseries",
                 primary_key="timestamp",

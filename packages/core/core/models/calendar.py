@@ -36,39 +36,49 @@ class Calendar(DataFrameModel):
     """
 
     broker: Series[Category] = Field(
+        description="""The broker that provided the calendar.""",
         nullable=False,
         coerce=True,
         isin=[broker.value for broker in Broker],
     )
-    """The broker that provided the calendar."""
 
-    date: Series[Date] = Field(nullable=False, coerce=True)
-    """Date of the trading day."""
+    date: Series[Date] = Field(
+        description="""The date of the trading day.""",
+        nullable=False,
+        coerce=True,
+    )
 
-    open: Series[Timestamp] = Field(nullable=False, coerce=True)
-    """Opening time of the trading day."""
+    open: Series[Timestamp] = Field(
+        description="""Opening time of the trading day.""",
+        nullable=False,
+        coerce=True,
+    )
 
-    close: Series[Timestamp] = Field(nullable=False, coerce=True)
-    """Closing time of the trading day."""
+    close: Series[Timestamp] = Field(
+        description="""Closing time of the trading day.""",
+        nullable=False,
+        coerce=True,
+    )
 
     @dataframe_check
-    def open_lower_than_close(cls, df: PolarsData):
+    def open_lower_than_close(cls, data: PolarsData):
         """Check if the product of the open and close prices is negative."""
-        return df.lazyframe.select(col("open").gt(col("close")))
+        return data.lazyframe.select(col("close").gt(col("open")))
 
 
 @final
 class CalendarData(DataContainer):
     """
-    Calendar data container which contains the calendar dataframe and validates it using the
-    Calendar model.
+    Calendar data container which contains a dataframe of calendars and validates it using the
+    Calendar model. If the dataframe is not valid, a `DataFrameValidationError` exception is
+    raised.
     """
 
     def __init__(self, lf: LazyFrame) -> None:
         super().__init__(
             DataContainerConfig(
                 name="calendar",
-                schema=Calendar.to_schema(),
+                model=Calendar,
                 lf=lf,
                 kind="timeseries",
                 primary_key="date",
