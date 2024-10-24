@@ -81,7 +81,6 @@ class DataContainer:
         try:
             validated_df = self.schema.validate(cleaned_df, lazy=True)
         except SchemaErrors as e:
-            print(e.failure_cases)
             raise DataFrameValidationError(
                 message=f"Validation failed for {self.name} data container.",
                 failure_cases=e.failure_cases,
