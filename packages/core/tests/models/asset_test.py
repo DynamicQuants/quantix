@@ -1,9 +1,8 @@
 import pytest
-from polars import DataFrame
 
-from core.models.asset import Asset, AssetClass, AssetData, AssetStatus
+from core.models.asset import AssetClass, AssetData, AssetModel, AssetStatus
 from core.models.broker import Broker
-from core.utils.dataframe import Boolean, DataFrameValidationError, LazyFrame, String
+from core.utils.dataframe import Boolean, Categorical, DataFrameValidationError, LazyFrame, String
 
 
 class TestAsset:
@@ -21,7 +20,7 @@ class TestAsset:
 
     @pytest.fixture
     def sample_asset_lf(self, asset_data):
-        return DataFrame(asset_data).lazy()
+        return LazyFrame(asset_data)
 
     def test_asset_class_enum(self):
         assert AssetClass.EQUITY.value == "Equity"
@@ -35,7 +34,7 @@ class TestAsset:
         assert AssetStatus.INACTIVE.value == "Inactive"
 
     def test_asset_model_fields(self):
-        assert set(Asset.to_schema().columns) == {
+        assert set(AssetModel.to_schema().columns) == {
             "broker",
             "name",
             "symbol",
@@ -48,15 +47,23 @@ class TestAsset:
     def test_asset_dtypes(self, sample_asset_lf):
         asset_data = AssetData(sample_asset_lf)
         assert asset_data.dtypes() == {
-            "broker": "String",
+            "broker": "Categorical",
             "name": "String",
             "symbol": "String",
             "exchange": "String",
-            "asset_class": "String",
+            "asset_class": "Categorical",
             "tradable": "Bool",
-            "status": "String",
+            "status": "Categorical",
         }
-        assert asset_data.df().dtypes == [String, String, String, String, String, Boolean, String]
+        assert asset_data.df().dtypes == [
+            Categorical,
+            String,
+            String,
+            String,
+            Categorical,
+            Boolean,
+            Categorical,
+        ]
 
     def test_asset_data_schema(self, sample_asset_lf):
         asset_data = AssetData(sample_asset_lf)
@@ -89,9 +96,10 @@ class TestAsset:
         invalid_data = asset_data.copy()
         invalid_data["broker"][0] = "InvalidBroker"
         invalid_data["asset_class"][0] = "InvalidAssetClass"
+        invalid_data["status"][0] = "InvalidStatus"
         lz = LazyFrame(invalid_data)
 
         with pytest.raises(DataFrameValidationError) as e:
             AssetData(lz)
 
-        assert e.value.failure_cases.shape == (2, 6)
+        assert e.value.failure_cases.shape == (3, 6)
