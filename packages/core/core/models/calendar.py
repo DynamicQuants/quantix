@@ -9,7 +9,7 @@
 from typing import final
 
 from core.utils.dataframe import (
-    Category,
+    Categorical,
     DataContainer,
     DataContainerConfig,
     DataFrameModel,
@@ -27,15 +27,13 @@ from .broker import Broker
 
 
 @final
-class Calendar(DataFrameModel):
+class CalendarModel(DataFrameModel):
     """
-    Calendar data for a specific trading venue.
-
-    Depending the market, the trading day may start and end at different times. This model defines
-    the date of the trading day, as well as the opening and closing times of the trading day.
+    Calendar model that defines the data of a calendar that represents the trading hours of a
+    trading venue. Depending the market, the trading day may start and end at different times.
     """
 
-    broker: Series[Category] = Field(
+    broker: Series[Categorical] = Field(
         description="""The broker that provided the calendar.""",
         nullable=False,
         coerce=True,
@@ -78,7 +76,7 @@ class CalendarData(DataContainer):
         super().__init__(
             DataContainerConfig(
                 name="calendar",
-                model=Calendar,
+                model=CalendarModel,
                 lf=lf,
                 kind="timeseries",
                 primary_key="date",

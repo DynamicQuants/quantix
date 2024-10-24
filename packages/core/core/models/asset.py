@@ -9,6 +9,7 @@ from enum import Enum
 from typing import final
 
 from core.utils.dataframe import (
+    Categorical,
     DataContainer,
     DataContainerConfig,
     DataFrameModel,
@@ -50,7 +51,7 @@ class AssetStatus(str, Enum):
 
 
 @final
-class Asset(DataFrameModel):
+class AssetModel(DataFrameModel):
     """
     Defines the data of an asset that can be traded by the broker.
 
@@ -59,9 +60,10 @@ class Asset(DataFrameModel):
     and to place trades.
     """
 
-    broker: Series[str] = Field(
+    broker: Series[Categorical] = Field(
         description="The broker that provides access to the asset",
         nullable=False,
+        coerce=True,
         isin=[broker.value for broker in Broker],
     )
 
@@ -82,7 +84,7 @@ class Asset(DataFrameModel):
         could be 'NASDAQ' or 'NYSE'. Or for crypto, this could be 'Binance' or 'Coinbase'.""",
     )
 
-    asset_class: Series[str] = Field(
+    asset_class: Series[Categorical] = Field(
         description="""The type of asset. Can be 'equity', 'crypto', 'forex', etc.""",
         nullable=False,
         coerce=True,
@@ -94,9 +96,10 @@ class Asset(DataFrameModel):
         nullable=False,
     )
 
-    status: Series[str] = Field(
+    status: Series[Categorical] = Field(
         description="""The asset status in the broker.""",
         nullable=False,
+        coerce=True,
         isin=[status.value for status in AssetStatus],
     )
 
@@ -112,7 +115,7 @@ class AssetData(DataContainer):
         super().__init__(
             DataContainerConfig(
                 name="assets",
-                model=Asset,
+                model=AssetModel,
                 lf=lf,
                 kind="non-relational",
                 primary_key="broker,symbol",

@@ -8,6 +8,7 @@
 from typing import Optional, final
 
 from core.utils.dataframe import (
+    Categorical,
     DataContainer,
     DataContainerConfig,
     DataFrameModel,
@@ -22,7 +23,7 @@ from .timeframe import TFPreset, TimeFrame
 
 
 @final
-class Bar(DataFrameModel):
+class BarModel(DataFrameModel):
     """
     A bar better known as a candlestick is a representation of the price movement of an asset over
     a specific period of time. It contains the opening, high, low, and closing prices of the asset
@@ -34,7 +35,7 @@ class Bar(DataFrameModel):
         coerce=True,
     )
 
-    broker: Series[str] = Field(
+    broker: Series[Categorical] = Field(
         description="""The broker that provided the bar.""",
         nullable=False,
         coerce=True,
@@ -44,10 +45,9 @@ class Bar(DataFrameModel):
     symbol: Series[str] = Field(
         description="""The asset symbol of the bar.""",
         nullable=False,
-        coerce=True,
     )
 
-    timeframe: Series[str] = Field(
+    timeframe: Series[Categorical] = Field(
         description="""The bar timeframe.""",
         nullable=False,
         coerce=True,
@@ -58,42 +58,36 @@ class Bar(DataFrameModel):
     open: Series[float] = Field(
         description="""The opening price of the bar.""",
         nullable=False,
-        coerce=True,
         gt=0,
     )
 
     high: Series[float] = Field(
         description="""The highest price of the bar.""",
         nullable=False,
-        coerce=True,
         gt=0,
     )
 
     low: Series[float] = Field(
         description="""The lowest price of the bar.""",
         nullable=False,
-        coerce=True,
         gt=0,
     )
 
     close: Series[float] = Field(
         description="""The closing price of the bar.""",
         nullable=False,
-        coerce=True,
         gt=0,
     )
 
     volume: Series[float] = Field(
         description="""The volume of the bar.""",
         nullable=False,
-        coerce=True,
         gt=0,
     )
 
     vwap: Optional[Series[float]] = Field(
         description="""The volume-weighted average price of the bar.""",
         nullable=True,
-        coerce=True,
         gt=0,
     )
 
@@ -109,7 +103,7 @@ class BarData(DataContainer):
         super().__init__(
             DataContainerConfig(
                 name="bars",
-                model=Bar,
+                model=BarModel,
                 lf=lf,
                 kind="timeseries",
                 primary_key="timestamp",

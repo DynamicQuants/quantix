@@ -20,7 +20,7 @@ from core.models.broker import Broker
 from core.ports.repository import LoadOptions, Repository
 
 from .dataframe import (
-    Category,
+    Categorical,
     DataContainer,
     DataContainerConfig,
     DataFrame,
@@ -34,24 +34,54 @@ from .dataframe import (
 from .datatypes import float32
 
 
-class RegistryItem(DataFrameModel):
+class RegistryModel(DataFrameModel):
     """
-    A registry item is an entry in the registry that stores the logs of the actions performed by
-    the market data.
+    Represents a registry item that stores the logs of the actions performed by the core components
+    like market data, trading, backtesting, risk management, etc.
     """
 
-    uuid: Series[str] = Field(unique=True)
-    timestamp: Series[Timestamp] = Field(unique=True, coerce=True)
-    broker: Series[Category] = Field(
+    uuid: Series[str] = Field(
+        description="The unique identifier.",
+        unique=True,
+    )
+
+    timestamp: Series[Timestamp] = Field(
+        description="The timestamp.",
+        unique=True,
+        coerce=True,
+    )
+
+    broker: Series[Categorical] = Field(
+        description="The broker.",
         nullable=False,
         coerce=True,
         isin=[broker.value for broker in Broker],
     )
-    action: Series[str] = Field(nullable=False)
-    log: Series[str] = Field(nullable=False)
-    rows_inserted: Series[int] = Field(nullable=True)
-    rows_updated: Series[int] = Field(nullable=True)
-    execution_time: Series[Float32] = Field(nullable=True)
+
+    action: Series[str] = Field(
+        description="The action performed.",
+        nullable=False,
+    )
+
+    log: Series[str] = Field(
+        description="The log of the action performed.",
+        nullable=False,
+    )
+
+    rows_inserted: Series[int] = Field(
+        description="The number of rows inserted.",
+        nullable=True,
+    )
+
+    rows_updated: Series[int] = Field(
+        description="The number of rows updated.",
+        nullable=True,
+    )
+
+    execution_time: Series[Float32] = Field(
+        description="The execution time in seconds.",
+        nullable=True,
+    )
 
 
 class RegistryDataContainer(DataContainer):
@@ -61,7 +91,7 @@ class RegistryDataContainer(DataContainer):
         super().__init__(
             DataContainerConfig(
                 name="registry",
-                model=RegistryItem,
+                model=RegistryModel,
                 lf=lf,
                 kind="non-relational",
                 primary_key="uuid",

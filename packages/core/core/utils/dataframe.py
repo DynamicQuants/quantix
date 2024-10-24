@@ -32,14 +32,14 @@ concat_str = pl.concat_str
 lit = pl.lit
 read_database = pl.read_database
 
-# Pandera extensions.
-check = pa.check
 
 # Custom types for the data frame columns.
 Timestamp = Annotated[pl.Datetime, "ns", "UTC"]
+DateTime = pl.Datetime
 Date = pl.Date
-Category = pl.Categorical
+Categorical = pl.Categorical
 Float32 = pl.Float32
+Float64 = pl.Float64
 String = pl.String
 Boolean = pl.Boolean
 
