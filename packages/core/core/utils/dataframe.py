@@ -83,7 +83,7 @@ class DataFrameBaseModel(DataFrameModel):
 
         # Make sure all specified columns are in the validated dataframe - if "filter",
         # removes columns not specified in the schema.
-        strict = True
+        strict = "filter"
 
         # Drop invalid rows. This raises an error if there are any invalid rows.
         drop_invalid_rows = False
