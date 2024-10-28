@@ -11,7 +11,7 @@ from core.utils.dataframe import (
     Categorical,
     DataContainer,
     DataContainerConfig,
-    DataFrameModel,
+    DataFrameBaseModel,
     Field,
     LazyFrame,
     Series,
@@ -23,7 +23,7 @@ from .timeframe import TFPreset, TimeFrame
 
 
 @final
-class BarModel(DataFrameModel):
+class BarModel(DataFrameBaseModel):
     """
     A bar better known as a candlestick is a representation of the price movement of an asset over
     a specific period of time. It contains the opening, high, low, and closing prices of the asset

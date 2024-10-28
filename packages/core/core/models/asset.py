@@ -12,7 +12,7 @@ from core.utils.dataframe import (
     Categorical,
     DataContainer,
     DataContainerConfig,
-    DataFrameModel,
+    DataFrameBaseModel,
     Field,
     LazyFrame,
     Series,
@@ -51,7 +51,7 @@ class AssetStatus(str, Enum):
 
 
 @final
-class AssetModel(DataFrameModel):
+class AssetModel(DataFrameBaseModel):
     """
     Defines the data of an asset that can be traded by the broker.
 

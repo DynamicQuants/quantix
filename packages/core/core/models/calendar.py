@@ -12,13 +12,13 @@ from core.utils.dataframe import (
     Categorical,
     DataContainer,
     DataContainerConfig,
-    DataFrameModel,
+    DataFrameBaseModel,
     Date,
     Field,
     LazyFrame,
     PolarsData,
     Series,
-    Timestamp,
+    Time,
     col,
     dataframe_check,
 )
@@ -27,7 +27,7 @@ from .broker import Broker
 
 
 @final
-class CalendarModel(DataFrameModel):
+class CalendarModel(DataFrameBaseModel):
     """
     Calendar model that defines the data of a calendar that represents the trading hours of a
     trading venue. Depending the market, the trading day may start and end at different times.
@@ -46,13 +46,13 @@ class CalendarModel(DataFrameModel):
         coerce=True,
     )
 
-    open: Series[Timestamp] = Field(
+    open: Series[Time] = Field(
         description="""Opening time of the trading day.""",
         nullable=False,
         coerce=True,
     )
 
-    close: Series[Timestamp] = Field(
+    close: Series[Time] = Field(
         description="""Closing time of the trading day.""",
         nullable=False,
         coerce=True,

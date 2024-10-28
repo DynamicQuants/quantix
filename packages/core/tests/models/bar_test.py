@@ -54,9 +54,6 @@ class TestBarData:
     def test_bar_dtypes(self, sample_bar_lf):
         bar_data = BarData(sample_bar_lf)
 
-        print("bar_data.df().dtypes -----> ", bar_data.df().dtypes)
-        print("bar_data.dtypes -----> ", bar_data.dtypes())
-
         assert bar_data.dtypes() == {
             "timestamp": "DateTime",
             "broker": "Categorical",

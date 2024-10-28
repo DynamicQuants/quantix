@@ -91,6 +91,7 @@ class TimescaleRepository(TimescaleClient, Repository):
             "String": "TEXT",
             "DateTime": "TIMESTAMPTZ",
             "Date": "DATE",
+            "Time": "TIME",
             "Categorical": "TEXT",
         }
 
