@@ -7,7 +7,6 @@
 
 from typing import List, cast, final
 
-import polars as pl
 from alpaca.data.models import Bar as AlpacaBar
 from alpaca.data.models import BarSet
 from alpaca.data.requests import StockBarsRequest
@@ -18,11 +17,12 @@ from alpaca.trading.models import Asset as AlpacaAsset
 from alpaca.trading.models import Calendar as AlpacaCalendar
 from alpaca.trading.requests import GetAssetsRequest, GetCalendarRequest
 
-from core.models.asset import Asset, AssetClass, AssetDataFrame, AssetStatus
-from core.models.bar import Bar, BarDataFrame
+from core.models.asset import AssetClass, AssetData, AssetStatus
+from core.models.bar import BarData
 from core.models.broker import Broker
-from core.models.calendar import Calendar, CalendarDataFrame
+from core.models.calendar import CalendarData
 from core.ports.fetcher import FetchBarsParams, FetchCalendarParams, Fetcher
+from core.utils.dataframe import LazyFrame, col, concat_str, lit
 
 from .alpaca_client import AlpacaDataClient
 
@@ -39,13 +39,16 @@ class AlpacaFetcher(AlpacaDataClient, Fetcher):
         AlpacaDataClient.__init__(self)
         Fetcher.__init__(self, has_calendar=True)
 
-    def fetch_calendar(self, params: FetchCalendarParams | None = None) -> CalendarDataFrame:
+    def fetch_calendar(self, params: FetchCalendarParams | None = None) -> CalendarData:
+        """Fetch the calendar from the Alpaca API."""
         request = GetCalendarRequest(start=params.start, end=params.end) if params else None
         response = self.get_calendar(request)
         calendar = cast(list[AlpacaCalendar], response)
-        return CalendarDataFrame(calendar).set_model(Calendar).drop().validate()
+        lf = LazyFrame(calendar).with_columns([lit(Broker.ALPACA.value).alias("broker")])
+        return CalendarData(lf)
 
-    def fetch_assets(self) -> AssetDataFrame:
+    def fetch_assets(self) -> AssetData:
+        """Fetch the assets from the Alpaca API."""
         request = GetAssetsRequest(
             asset_class=AlpacaAssetClass.US_EQUITY,
             status=AlpacaAssetStatus.ACTIVE,
@@ -54,33 +57,30 @@ class AlpacaFetcher(AlpacaDataClient, Fetcher):
 
         # Maps the Alpaca asset status to the AssetDataFrame Asset status.
         status_map = {
-            AlpacaAssetStatus.ACTIVE: AssetStatus.ACTIVE,
-            AlpacaAssetStatus.INACTIVE: AssetStatus.INACTIVE,
+            AlpacaAssetStatus.ACTIVE: AssetStatus.ACTIVE.value,
+            AlpacaAssetStatus.INACTIVE: AssetStatus.INACTIVE.value,
         }
 
         # Maps the Alpaca asset class to the AssetDataFrame Asset class.
         asset_class_map = {
-            AlpacaAssetClass.US_EQUITY: AssetClass.EQUITY,
-            AlpacaAssetClass.US_OPTION: AssetClass.OPTION,
-            AlpacaAssetClass.CRYPTO: AssetClass.CRYPTO,
+            AlpacaAssetClass.US_EQUITY: AssetClass.EQUITY.value,
+            AlpacaAssetClass.US_OPTION: AssetClass.OPTION.value,
+            AlpacaAssetClass.CRYPTO: AssetClass.CRYPTO.value,
         }
 
-        return (
-            AssetDataFrame(assets)
-            .set_model(Asset)
-            .with_columns(
-                [
-                    pl.concat_str([pl.col("name"), pl.col("symbol")], separator="-").alias("name"),
-                    pl.lit(Broker.ALPACA).alias("broker"),
-                    pl.col("status").replace_strict(status_map).alias("status"),
-                    pl.col("asset_class").replace_strict(asset_class_map).alias("asset_class"),
-                ]
-            )
-            .drop()
-            .validate()
+        lf = LazyFrame(assets).with_columns(
+            [
+                concat_str([col("name"), col("symbol")], separator="-").alias("name"),
+                lit(Broker.ALPACA.value).alias("broker"),
+                col("status").replace_strict(status_map).alias("status"),
+                col("asset_class").replace_strict(asset_class_map).alias("asset_class"),
+            ]
         )
 
-    def fetch_bars(self, params: FetchBarsParams) -> BarDataFrame:
+        return AssetData(lf)
+
+    def fetch_bars(self, params: FetchBarsParams) -> BarData:
+        """Fetch the bars from the Alpaca API."""
         request = StockBarsRequest(
             symbol_or_symbols=params.symbol,
             timeframe=AlpacaTimeFrame(
@@ -94,4 +94,12 @@ class AlpacaFetcher(AlpacaDataClient, Fetcher):
 
         response = self.get_stock_bars(request)
         bars = cast(List[AlpacaBar], cast(BarSet, response)[params.symbol])
-        return BarDataFrame(bars).set_model(Bar).drop().validate()
+        lf = LazyFrame(bars).with_columns(
+            [
+                lit(params.symbol).alias("symbol"),
+                lit(Broker.ALPACA.value).alias("broker"),
+                lit(params.timeframe.name_value).alias("timeframe"),
+            ]
+        )
+
+        return BarData(lf)

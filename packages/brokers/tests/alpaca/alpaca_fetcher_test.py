@@ -2,7 +2,7 @@ from datetime import date, datetime
 
 import pytest
 
-from brokers.adapters.alpaca_fetcher import AlpacaFetcher
+from brokers.alpaca.alpaca_fetcher import AlpacaFetcher
 from core.models.timeframe import TFPreset
 from core.ports.fetcher import FetchBarsParams, FetchCalendarParams
 
@@ -20,11 +20,11 @@ class TestAlpacaFetcher:
             )
         )
 
-        assert calendar.shape[0] == 6
+        assert calendar.df().shape[0] == 6
 
     def test_fetch_assets(self, alpaca_fetcher: AlpacaFetcher):
         assets = alpaca_fetcher.fetch_assets()
-        assert assets.shape[0] > 0
+        assert assets.df().shape[0] > 0
 
     def test_fetch_bars(self, alpaca_fetcher: AlpacaFetcher):
         bars = alpaca_fetcher.fetch_bars(
@@ -36,4 +36,4 @@ class TestAlpacaFetcher:
             )
         )
 
-        assert bars.shape[0] == 5
+        assert bars.df().shape[0] == 5
