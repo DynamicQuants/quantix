@@ -93,6 +93,7 @@ eggs/
 
 # Virtual Environments
 .venv/
+.venv.*
 
 # MyPy
 .mypy_cache/
